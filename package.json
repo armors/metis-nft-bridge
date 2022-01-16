@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.4",
+    "chai": "^4.3.4",
+    "dotenv": "^12.0.4",
+    "ethers": "^5.5.3",
+    "hardhat": "^2.8.2"
+  }
+}
