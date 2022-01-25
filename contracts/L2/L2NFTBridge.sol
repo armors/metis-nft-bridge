@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 import { CrossDomainEnabled } from "../gateway/CrossDomainEnabled.sol";
 
-import { IL1NFTBridge } from "../L2/IL1NFTBridge.sol";
+// import { IL1NFTBridge } from "../L2/IL1NFTBridge.sol";
 
 contract L2NFTBridge is AccessControl, CrossDomainEnabled {
     

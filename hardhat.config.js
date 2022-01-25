@@ -22,7 +22,9 @@ module.exports = {
   solidity: "0.8.9",
   networks: {
     'hardhat': {
-        accounts: { mnemonic: 'test test test test test test test test test test test junk' }
+        url: 'http://127.0.0.1:9545',
+        accounts: { mnemonic: 'test test test test test test test test test test test junk' },
+        gasPrice: 0
     },
     'metis-local': {
         url: 'http://127.0.0.1:8545',

@@ -58,7 +58,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         l2NFTBridge = _l2NFTBridge;
     }
     
-    function configNFT(address L1NFT, address L2NFT, uint256 originNFTChainId) external onlyRole(NFT_FACTORY_ROLE) {
+    function configNFT(address L1NFT, address L2NFT, uint256 originNFTChainId) external payable onlyRole(NFT_FACTORY_ROLE) {
         clone[L1NFT] = L2NFT;
         uint256 localChainId = getChainID();
         
@@ -70,7 +70,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
             IL2NFTBridge.configNFT.selector,
             L1NFT,
             L2NFT,
-            originNFTChainId,
+            originNFTChainId
         );
         
         // Send calldata into L2
