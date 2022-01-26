@@ -9,22 +9,29 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 import { CrossDomainEnabled } from "../gateway/CrossDomainEnabled.sol";
-import { iMVM_DiscountOracle } from "../gateway/iMVM_DiscountOracle.sol";
-import { Lib_AddressManager } from "../gateway/Lib_AddressManager.sol";
+// import { iMVM_DiscountOracle } from "../gateway/iMVM_DiscountOracle.sol";
+// import { Lib_AddressManager } from "../gateway/Lib_AddressManager.sol";
 
 import { IL2NFTBridge } from "../L2/IL2NFTBridge.sol";
 
 contract L1NFTBridge is AccessControl, CrossDomainEnabled {
     
+    // configNFT role
     bytes32 public constant NFT_FACTORY_ROLE = keccak256("NFT_FACTORY_ROLE");
-
+    
+    // l2 bridge
     address public l2NFTBridge;
+    
+    // l1 nft deposit
     address public l1NFTDeposit;
     
+    // pre deploy
     address public addressManager;
-
+    
+    // L2 chainid
     uint256 constant public DEST_CHAINID = 1088;
     
+    // get current chainid
     function getChainID() internal view returns (uint256) {
         uint256 id;
         assembly {
@@ -33,12 +40,14 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         return id;
     }
 
+    // nft supported
     enum nftenum {
         ERC721,
         ERC1155
     }
     // L1 nft => L2 nft
     mapping(address => address) public clone;
+    
     // L1 nft => is the original
     mapping(address => bool) public isOriginNFT;
 
@@ -52,13 +61,13 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         _setupRole(NFT_FACTORY_ROLE, _nftFactory);
         addressManager = _addressManager;
     }
-
+    
     function set(address _l1NFTDeposit, address _l2NFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE){
         l1NFTDeposit = _l1NFTDeposit;
         l2NFTBridge = _l2NFTBridge;
     }
     
-    function configNFT(address L1NFT, address L2NFT, uint256 originNFTChainId) external payable onlyRole(NFT_FACTORY_ROLE) {
+    function configNFT(address L1NFT, address L2NFT, uint256 originNFTChainId, uint32 l2Gas) external payable onlyRole(NFT_FACTORY_ROLE) {
         clone[L1NFT] = L2NFT;
         uint256 localChainId = getChainID();
         
@@ -66,7 +75,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         if(localChainId == originNFTChainId){
             isOriginNFT[L1NFT] = true;
         }
-        bytes memory message =  abi.encodeWithSelector(
+        bytes memory message = abi.encodeWithSelector(
             IL2NFTBridge.configNFT.selector,
             L1NFT,
             L2NFT,
@@ -77,7 +86,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         sendCrossDomainMessageViaChainId(
             DEST_CHAINID,
             l2NFTBridge,
-            0,
+            l2Gas,
             message,
             msg.value  //send all values as fees to cover l2 tx cost
         );

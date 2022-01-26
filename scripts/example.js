@@ -1,19 +1,24 @@
 const ethers = require('ethers')
-// const { Watcher } = require('@eth-optimism/core-utils')
-// const { predeploys, getContractInterface } = require('@eth-optimism/contracts')
+const { Watcher } = require('@eth-optimism/core-utils')
+const { predeploys, getContractInterface } = require('@metis.io/contracts')
 
-// Set up some contract factories. You can ignore this stuff.
-// const erc20L1Artifact = require(`../artifacts/contracts/ERC20.sol/ERC20.json`)
-// const factory__L1_ERC20 = new ethers.ContractFactory(erc20L1Artifact.abi, erc20L1Artifact.bytecode)
-// //const factory__L1_ERC20 = factory('ERC20')
-// const erc20L2Artifact = require('../node_modules/@eth-optimism/contracts/artifacts/contracts/standards/L2StandardERC20.sol/L2StandardERC20.json')
-// const factory__L2_ERC20 = new ethers.ContractFactory(erc20L2Artifact.abi, erc20L2Artifact.bytecode)
+const demo721Artifact = require(`../artifacts/contracts/mock/ERC721Mock.sol/ERC721Mock.json`)
+const demo721 = new ethers.ContractFactory(demo721Artifact.abi, demo721Artifact.bytecode)
 
-// const l1StandardBridgeArtifact = require(`../node_modules/@eth-optimism/contracts/artifacts/contracts/L1/messaging/L1StandardBridge.sol/L1StandardBridge.json`)
-// const factory__L1StandardBridge = new ethers.ContractFactory(l1StandardBridgeArtifact.abi, l1StandardBridgeArtifact.bytecode)
+const demo1155Artifact = require(`../artifacts/contracts/mock/ERC1155Mock.sol/ERC1155Mock.json`)
+const demo1155 = new ethers.ContractFactory(demo1155Artifact.abi, demo1155Artifact.bytecode)
 
-// const l2StandardBridgeArtifact = require(`../node_modules/@eth-optimism/contracts/artifacts/contracts/L2/messaging/L2StandardBridge.sol/L2StandardBridge.json`)
-// const factory__L2StandardBridge = new ethers.ContractFactory(l2StandardBridgeArtifact.abi, l2StandardBridgeArtifact.bytecode)
+const l1NFTBridgeArtifact = require(`../artifacts/contracts/L1/L1NFTBridge.sol/L1NFTBridge.json`)
+const L1NFTBridge = new ethers.ContractFactory(l1NFTBridgeArtifact.abi, l1NFTBridgeArtifact.bytecode)
+
+const l2NFTBridgeArtifact = require(`../artifacts/contracts/L2/L2NFTBridge.sol/L2NFTBridge.json`)
+const L2NFTBridge = new ethers.ContractFactory(l2NFTBridgeArtifact.abi, l2NFTBridgeArtifact.bytecode)
+
+const l1MVM_DiscountOracleArtifact = require(`../node_modules/@metis.io/contracts/artifacts/contracts/MVM/MVM_DiscountOracle.sol/MVM_DiscountOracle.json`)
+const l1MVM_DiscountOracle = new ethers.ContractFactory(l1MVM_DiscountOracleArtifact.abi, l1MVM_DiscountOracleArtifact.bytecode)
+
+const l1Lib_AddressManagerArtifact = require(`../node_modules/@metis.io/contracts/artifacts/contracts/libraries/resolver/Lib_AddressManager.sol/Lib_AddressManager.json`)
+const l1Lib_AddressManager = new ethers.ContractFactory(l1Lib_AddressManagerArtifact.abi, l1Lib_AddressManagerArtifact.bytecode)
 
 async function main() {
   // Set up our RPC provider connections.
@@ -27,49 +32,164 @@ async function main() {
   const l1Wallet = new ethers.Wallet(key, l1RpcProvider)
   const l2Wallet = new ethers.Wallet(key, l2RpcProvider)
 
+  console.log("l1Wallet", l1Wallet.address, (await l1Wallet.getBalance()).toString());
+  console.log("l2Wallet", l2Wallet.address, (await l2Wallet.getBalance()).toString());
+
   let l1_net = await l1RpcProvider.getNetwork();
   let l2_net = await l2RpcProvider.getNetwork();
 
-  console.log(l1_net.chainId, l2_net.chainId);
+  console.log("L1 chainID:", l1_net.chainId);
+  console.log("L2 chainID:", l2_net.chainId);
   
 
-//   const l2Messenger = new ethers.Contract(
-//     predeploys.L2CrossDomainMessenger,
-//     getContractInterface('L2CrossDomainMessenger'),
-//     l2RpcProvider
-//   )
+  const l2Messenger = new ethers.Contract(
+    predeploys.L2CrossDomainMessenger,
+    getContractInterface('L2CrossDomainMessenger'),
+    l2RpcProvider
+  )
 
-//   const l1Messenger = new ethers.Contract(
-//     await l2Messenger.l1CrossDomainMessenger(),
-//     getContractInterface('L1CrossDomainMessenger'),
-//     l1RpcProvider
-//   )
+  const l1Messenger = new ethers.Contract(
+    await l2Messenger.l1CrossDomainMessenger(),
+    getContractInterface('L1CrossDomainMessenger'),
+    l1RpcProvider
+  )
 
-//   const l1MessengerAddress = l1Messenger.address
+  
+
+  const l1MessengerAddress = l1Messenger.address
   // L2 messenger address is always the same, 0x42.....07
-//   const l2MessengerAddress = l2Messenger.address
+  const l2MessengerAddress = l2Messenger.address
 
-//   Tool that helps watches and waits for messages to be relayed between L1 and L2.
-//   const watcher = new Watcher({
-//     l1: {
-//       provider: l1RpcProvider,
-//       messengerAddress: l1MessengerAddress
-//     },
-//     l2: {
-//       provider: l2RpcProvider,
-//       messengerAddress: l2MessengerAddress
-//     }
-//   })
+  console.log("L1 MessengerAddress:", l1MessengerAddress);
+  console.log("L2 MessengerAddress:", l2MessengerAddress);
 
-//   // Deploy an ERC20 token on L1.
-//   console.log('Deploying L1 ERC20...')
 
-//   const L1_ERC20 = await factory__L1_ERC20.connect(l1Wallet).deploy(
-//     1234, //initialSupply
-//     'L1 ERC20', //name
-//   )
-//   await L1_ERC20.deployTransaction.wait()
-//   console.log(`   L1_ERC20 deployed @ ${L1_ERC20.address}`)
+  const l1GasPrice = await l1RpcProvider.getGasPrice()
+  const l2GasPrice = await l2RpcProvider.getGasPrice()
+  console.log("Current gas price L1:", l1GasPrice.toString() )
+  console.log("Current gas price L2:", l2GasPrice.toString() )
+
+  //  Tool that helps watches and waits for messages to be relayed between L1 and L2.
+  const watcher = new Watcher({
+    l1: {
+      provider: l1RpcProvider,
+      messengerAddress: l1MessengerAddress
+    },
+    l2: {
+      provider: l2RpcProvider,
+      messengerAddress: l2MessengerAddress
+    }
+  })
+
+  const lookupL1toL2 = async (hash) => {
+    console.log("L1 to L2 message")
+    console.log(`L1 TX hash: ${hash}`)
+    const [msgHash] = await watcher.getMessageHashesFromL1Tx(hash)
+    console.log(`Message hash: ${msgHash}`)
+    const L2Receipt = await watcher.getL2TransactionReceipt(msgHash)
+    console.log(`L2 TX hash: ${L2Receipt.transactionHash}`)
+  }   // lookupL1toL2
+  
+  
+  const lookupL2toL1 = async (hash) => {
+    console.log("L2 to L1 message")
+    console.log(`L2 TX hash: ${hash}`)  
+    const [msgHash] = await watcher.getMessageHashesFromL2Tx(hash)
+    console.log(`Message hash: ${msgHash}`)
+    const L1Receipt = await watcher.getL1TransactionReceipt(msgHash)
+    console.log(`L1 TX hash: ${L1Receipt.transactionHash}`)
+  }     // lookupL2toL1
+
+  //   get l1 libAddressManager
+  let l1libAddressManager = await l1Messenger.libAddressManager();
+  console.log("L1 libAddressManager:", l1libAddressManager);
+  const l1libAddressManagerObj = l1Lib_AddressManager.connect(l1Wallet).attach(l1libAddressManager)
+
+  let METIS_MANAGER = await l1libAddressManagerObj.getAddress("METIS_MANAGER");
+  console.log("L1 METIS_MANAGER:", METIS_MANAGER);
+
+  let MVM_DiscountOracle = await l1libAddressManagerObj.getAddress("MVM_DiscountOracle");
+  const MVM_DiscountOracleObj = l1MVM_DiscountOracle.connect(l1Wallet).attach(MVM_DiscountOracle)
+  console.log("L1 MVM_DiscountOracle:", MVM_DiscountOracle);
+
+  L1_TX0 = await MVM_DiscountOracleObj.setAllowAllXDomainSenders(true);
+  L1_TX0.wait();
+
+  // ------------------------------------------------------------  
+  // Deploy ERC721 on L1.
+  console.log('Deploying ERC721 on L1...')
+  const L1_demo721 = await demo721.connect(l1Wallet).deploy(
+    "L1 name",
+    "L1 symbol",
+    "ipfs://armors.io/L1/",
+  )
+  await L1_demo721.deployTransaction.wait();
+  console.log(`   L1_demo721 deployed @ ${L1_demo721.address}`)
+
+  // ------------------------------------------------------------
+  
+  // Deploy ERC721 on L2.
+  console.log('Deploying ERC721 on L2...')
+  const L2_demo721 = await demo721.connect(l2Wallet).deploy(
+    "L2 name",
+    "L2 symbol",
+    "ipfs://armors.io/L2/",
+  )
+  await L2_demo721.deployTransaction.wait();
+  console.log(`   L2_demo721 deployed @ ${L2_demo721.address}`)
+
+
+  // ------------------------------------------------------------
+  // Deploy l1 bridge on L1.
+  console.log('Deploying L1 bridge...')
+  const L1_bridge = await L1NFTBridge.connect(l1Wallet).deploy(
+    l1Wallet.address,
+    l1Wallet.address,
+    l1libAddressManager,
+    l1MessengerAddress
+  )
+  await L1_bridge.deployTransaction.wait();
+  console.log(`   L1_bridge deployed @ ${L1_bridge.address}`)
+
+  // ------------------------------------------------------------
+  // Deploy l2 bridge on L2.
+  console.log('Deploying L2 bridge...')
+  const L2_bridge = await L2NFTBridge.connect(l2Wallet).deploy(
+    l2Wallet.address,
+    l2Wallet.address,
+    l2MessengerAddress
+  )
+  await L2_bridge.deployTransaction.wait();
+  console.log(`   L2_bridge deployed @ ${L2_bridge.address}`)
+
+  // ------------------------------------------------------------
+  L1_TX1 = await L1_bridge.set(l1Wallet.address,L2_bridge.address);
+  await L1_TX1.wait()
+
+  L2_TX1 = await L2_bridge.init(l2Wallet.address, L1_bridge.address);
+  await L2_TX1.wait()
+
+  L1_TX2 = await L1_bridge.configNFT(L1_demo721.address, L2_demo721.address, l2_net.chainId, 2000000);
+  await L1_TX2.wait()
+  
+  console.log('waiting peer')
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  console.log(
+    "L1 clone:",
+    await L1_bridge.clone(L1_demo721.address),
+    await L1_bridge.isOriginNFT(L1_demo721.address),
+    "L2 clone:",
+    await L2_bridge.clone(L2_demo721.address),
+    await L2_bridge.isOriginNFT(L2_demo721.address),
+  )
+//   // Wait for the message to be relayed to L2.
+//   console.log('Waiting for confit to be relayed to L2...', L1_TX2.hash)
+//   await lookupL1toL2(L1_TX2.hash);
+//   const [ msgHash1 ] = await watcher.getMessageHashesFromL1Tx(L1_TX2.hash)
+//   console.log('msgHash1', msgHash1)
+//   const receipt = await watcher.getL2TransactionReceipt(msgHash1, true)
+//   console.log("receipt", receipt)
 
 //   // Deploy the paired ERC20 token to L2.
 //   console.log('Deploying L2 ERC20...')

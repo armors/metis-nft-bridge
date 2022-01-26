@@ -2,26 +2,13 @@
 # yarn lockfile v1
 
 
-"@eth-optimism/contracts@^0.5.8":
-  version "0.5.8"
-  resolved "https://registry.yarnpkg.com/@eth-optimism/contracts/-/contracts-0.5.8.tgz#975313a219b5537bad7f4f98f8841c98592882d0"
-  integrity sha512-INvIMiE72Y6tjxm+BZyN9f3+LiMKJgmNpR0qEimrvpg49hK8gOXQTnI+0C7/qIIGvgaQgDyejG9AfkxZizjLVQ==
-  dependencies:
-    "@eth-optimism/core-utils" "0.7.3"
-    "@ethersproject/abstract-provider" "^5.4.1"
-    "@ethersproject/abstract-signer" "^5.4.1"
-    "@ethersproject/hardware-wallets" "^5.4.0"
-
-"@eth-optimism/core-utils@0.7.3", "@eth-optimism/core-utils@^0.7.3":
-  version "0.7.3"
-  resolved "https://registry.yarnpkg.com/@eth-optimism/core-utils/-/core-utils-0.7.3.tgz#67a7ec3cd65a555c6b5ef50d03ea66aa8df9f6c8"
-  integrity sha512-e531gfcMN6LWvGgJGfB37cU8HNUXfCkT6OO84KT8qKHMT4mOxyUqnApTYOHBxXGetLd3z/n67KwBCkJLZBr9jw==
+"@eth-optimism/core-utils@^0.6.1":
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/@eth-optimism/core-utils/-/core-utils-0.6.1.tgz#ace2f9c31e995e48d1fa6229e3afaa7f4c53e11d"
+  integrity sha512-mTNEpUIaYXf+fSXxJCbWO9+1+vKzAPc3mC4TU3ukCfL19IdFf9ytG/9YKAM3Ls6bAhpwgKdIy1G+OEHvt4vxmA==
   dependencies:
     "@ethersproject/abstract-provider" "^5.4.1"
-    "@ethersproject/bytes" "^5.5.0"
     "@ethersproject/providers" "^5.4.5"
-    "@ethersproject/web" "^5.5.0"
-    chai "^4.3.4"
     ethers "^5.4.5"
     lodash "^4.17.21"
 
@@ -182,7 +169,7 @@
   dependencies:
     "@ethersproject/bignumber" "^5.5.0"
 
-"@ethersproject/contracts@5.5.0":
+"@ethersproject/contracts@5.5.0", "@ethersproject/contracts@^5.4.1":
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/contracts/-/contracts-5.5.0.tgz#b735260d4bd61283a670a82d5275e2a38892c197"
   integrity sha512-2viY7NzyvJkh+Ug17v7g3/IJC8HqZBDcOjYARZLdzRxrfGlRgmYgl6xPRKVbEzy1dWKw/iv7chDcS83pg6cLxg==
@@ -536,6 +523,17 @@
   version "5.50.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-5.50.0.tgz#29c6419e8379d496ab6d0426eadf3c4d100cd186"
   integrity sha512-swKHYCOZUGyVt4ge0u8a7AwNcA//h4nx5wIi0sruGye1IJ5Cva0GyK9L2/WdX+kWVTKp92ZiEo1df31lrWGPgA==
+
+"@metis.io/contracts@^1.2.3":
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/@metis.io/contracts/-/contracts-1.2.3.tgz#b8095df23c6a009624cfd74e8b6b2720bd75ec64"
+  integrity sha512-KWQQFtF3ruMYdsQGnbNkpWH0Zm9ee60TRijpmz4g9FEc6L+Lw07LSuxJOtl8kqj/k7xAvV1faNrc86if64mVMA==
+  dependencies:
+    "@eth-optimism/core-utils" "^0.6.1"
+    "@ethersproject/abstract-provider" "^5.4.1"
+    "@ethersproject/abstract-signer" "^5.4.1"
+    "@ethersproject/contracts" "^5.4.1"
+    "@ethersproject/hardware-wallets" "^5.4.0"
 
 "@nomiclabs/hardhat-ethers@^2.0.4":
   version "2.0.4"
