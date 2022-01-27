@@ -32,7 +32,7 @@ docker logs ops_relayer_1 |& grep 'Connected to OVM_' | tail -4
 npx hardhat accounts
 npx hardhat compile
 npx hardhat test --network metis-local
-node scripts/sample-script.js
+node scripts/example.js
 npx hardhat help
 npx hardhat clean
 ```
