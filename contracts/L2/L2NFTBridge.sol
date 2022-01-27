@@ -89,7 +89,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
     
        address destNFT = clone[localNFT];
 
-       _DepositByChainId(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
+       _DepositByChainId(getChainID(), destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
     }
 
     function _DepositByChainId(uint256 chainId, address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGas) internal {
@@ -113,7 +113,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
         );
     }
 
-    function finalizeDeposit(address _localNFT, address _destfrom, address _localTo, uint256 id, uint256 _amount, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
+    function finalizeDeposit(address _localNFT, address _destFrom, address _localTo, uint256 id, uint256 _amount, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
         
         if(nftenum.ERC721 == nftStandard) {
             if(isDeposit[_localNFT][id]){

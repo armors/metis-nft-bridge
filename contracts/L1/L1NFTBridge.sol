@@ -138,7 +138,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         );
     }
     
-    function finalizeDeposit(address _localNFT, address _destfrom, address _localTo, uint256 id, uint256 _amount, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
+    function finalizeDeposit(address _localNFT, address _destFrom, address _localTo, uint256 id, uint256 _amount, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
         
         if(nftenum.ERC721 == nftStandard) {
             if(isDeposit[_localNFT][id]){
