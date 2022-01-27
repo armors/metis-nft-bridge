@@ -23,9 +23,6 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
     // l1 nft deposit
     address public localNFTDeposit;
 
-    // l1 chainid
-    uint256 constant public DEST_CHAINID = 31337;
-
     function getChainID() internal view returns (uint256) {
         uint256 id;
         assembly {
@@ -89,10 +86,10 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
     
        address destNFT = clone[localNFT];
 
-       _DepositByChainId(getChainID(), destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
+       _DepositByChainId(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
     }
 
-    function _DepositByChainId(uint256 chainId, address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGas) internal {
+    function _DepositByChainId(address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGas) internal {
 
         bytes memory message =  abi.encodeWithSelector(
             INFTBridge.finalizeDeposit.selector,
@@ -104,8 +101,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
             nftStandard
         );
         
-        sendCrossDomainMessageViaChainId(
-            chainId,
+        sendCrossDomainMessage(
             destNFTBridge,
             destGas,
             message,
