@@ -33,8 +33,8 @@ async function main() {
   const l1Wallet = new ethers.Wallet(key, l1RpcProvider)
   const l2Wallet = new ethers.Wallet(key, l2RpcProvider)
 
-  console.log("l1Wallet", l1Wallet.address, (await l1Wallet.getBalance()).toString());
-  console.log("l2Wallet", l2Wallet.address, (await l2Wallet.getBalance()).toString());
+  console.log("l1 Wallet getBalance", l1Wallet.address, (await l1Wallet.getBalance()).toString());
+  console.log("l2 Wallet getBalance", l2Wallet.address, (await l2Wallet.getBalance()).toString());
 
   let l1_net = await l1RpcProvider.getNetwork();
   let l2_net = await l2RpcProvider.getNetwork();
@@ -42,7 +42,6 @@ async function main() {
   console.log("L1 chainID:", l1_net.chainId);
   console.log("L2 chainID:", l2_net.chainId);
   
-
   const l2Messenger = new ethers.Contract(
     predeploys.L2CrossDomainMessenger,
     getContractInterface('L2CrossDomainMessenger'),
@@ -56,7 +55,6 @@ async function main() {
   )
 
   const l1MessengerAddress = l1Messenger.address
-  // L2 messenger address is always the same, 0x42.....07
   const l2MessengerAddress = l2Messenger.address
 
   console.log("L1 MessengerAddress:", l1MessengerAddress);
@@ -81,6 +79,7 @@ async function main() {
   console.log("L1 MVM_DiscountOracle:", MVM_DiscountOracle);
   L1_TX0 = await MVM_DiscountOracleObj.setAllowAllXDomainSenders(true);
   L1_TX0.wait();
+  console.log("L1 METIS_MANAGER set white list")
 
   // ------------------------------------------------------------  
   // Deploy ERC721 on L1.
@@ -98,7 +97,7 @@ async function main() {
   await L1_demo721.mint(l1Wallet.address, L1_demo721_token_1);
   await L1_demo721.mint(l1Wallet.address, demo721_token_2);
   let l1balanceOf = await L1_demo721.balanceOf(l1Wallet.address);
-  console.log(`   L1_demo721 mint to l1Wallet.address {1、2} tokenId:`, l1balanceOf.toString());
+  console.log(`   L1_demo721 mint to l1_Wallet.address tokenIds with {1、2} total:`, l1balanceOf.toString());
 
   // ------------------------------------------------------------
   
@@ -135,52 +134,53 @@ async function main() {
   console.log(`   L2_bridge deployed @ ${L2_bridge.address}`)
 
   // ------------------------------------------------------------
-  console.log('Grant mint role to L2 bridge...')
+  console.log('clone NFT(L2_demo721) Grant mint role to L2 bridge...')
   let mintRole = await L2_demo721.MINTER_ROLE();
   console.log("mintRole:", mintRole);
-
   L2_TX1 = await L2_demo721.grantRole(mintRole, L2_bridge.address);
   await L2_TX1.wait()
-  console.log('Grant L2_demo721 mint role to L2 bridge done.')
+  console.log('Grant done.')
 
   // ------------------------------------------------------------
   console.log('Deploying L1 NFTDeposit on L1...')
   const L1_NFTDeposit = await NFTDeposit.connect(l1Wallet).deploy(
     l1Wallet.address, // owner
     L1_bridge.address // withdraw
-
   )
   await L1_NFTDeposit.deployTransaction.wait();
   console.log(`   L1 NFTDeposit deployed @ ${L1_NFTDeposit.address}`)
 
   // ------------------------------------------------------------
 
-  // ------------------------------------------------------------
   console.log('Deploying L2 NFTDeposit on L2...')
   const L2_NFTDeposit = await NFTDeposit.connect(l2Wallet).deploy(
     l2Wallet.address, // owner
     L2_bridge.address // withdraw
-
   )
+
   await L2_NFTDeposit.deployTransaction.wait();
   console.log(`   L2 NFTDeposit deployed @ ${L2_NFTDeposit.address}`)
 
   // ------------------------------------------------------------
 
+  console.log(`init L1 and L2 config`)
   L1_TX1 = await L1_bridge.set(L1_NFTDeposit.address,L2_bridge.address);
   await L1_TX1.wait()
 
   L2_TX2 = await L2_bridge.set(L2_NFTDeposit.address, L1_bridge.address);
   await L2_TX2.wait()
+  console.log(`init done.`)
 
   let blocksToFetch = await l2RpcProvider.getBlockNumber();
+ 
 
+  console.log(`project config clone nft.`)
   L1_TX2 = await L1_bridge.configNFT(L1_demo721.address, L2_demo721.address, l1_net.chainId, 2000000);
   await L1_TX2.wait()
   
   // ------------------------------------------------------------
 
-  console.log('waiting peer')
+  console.log('waiting peer L1 => L2 ')
   await new Promise((resolve) => setTimeout(resolve, 5000));
 
   const receiptTX = async(provider, txHash) => {
