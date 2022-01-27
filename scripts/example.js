@@ -203,6 +203,8 @@ async function main() {
   L2_TX2 = await L2_bridge.set(L2_NFTDeposit.address, L1_bridge.address);
   await L2_TX2.wait()
 
+  let blocksToFetch = await l2RpcProvider.getBlockNumber();
+
   L1_TX2 = await L1_bridge.configNFT(L1_demo721.address, L2_demo721.address, l1_net.chainId, 2000000);
   await L1_TX2.wait()
   
@@ -211,6 +213,114 @@ async function main() {
   console.log('waiting peer')
   await new Promise((resolve) => setTimeout(resolve, 5000));
 
+  const receiptTX = async(provider, txHash) => {
+    const receipt = await provider.getTransactionReceipt(txHash)
+    if (!receipt) {
+      return []
+    }
+    console.debug("hosea-debug tx receipt: ", receipt);
+
+    const msgHashes = []
+    const sentMessageEventId = ethers.utils.id(
+      'SentMessage(address,address,bytes,uint256,uint256,uint256)'
+    )
+
+    console.debug("hosea-debug: sendMessage Event ", sentMessageEventId);
+
+    const l2CrossDomainMessengerRelayAbi = [
+      'function relayMessage(address _target,address _sender,bytes memory _message,uint256 _messageNonce)',
+    ]
+    const l2CrossDomainMessengerRelayinterface = new ethers.utils.Interface(
+      l2CrossDomainMessengerRelayAbi
+    )
+
+    for (const log of receipt.logs) {
+        console.debug("hosea-debug: log.topics ", log.topics);
+        // call l1 Messenger and send cross domain msg
+      if (log.address === l1MessengerAddress && log.topics[0] === sentMessageEventId) {
+          const [sender, message, messageNonce] = ethers.utils.defaultAbiCoder.decode(
+            ['address', 'bytes', 'uint256'],
+            log.data
+          )
+  
+          const [target] = ethers.utils.defaultAbiCoder.decode(
+            ['address'],
+            log.topics[1]
+          )
+
+          console.debug("hosea-debug: dest target ", target);
+
+          const encodedMessage = l2CrossDomainMessengerRelayinterface.encodeFunctionData(
+            'relayMessage',
+            [target, sender, message, messageNonce]
+          )
+          console.debug("hosea-debug: relayMessage ", [target, sender, message, messageNonce]);
+  
+          msgHashes.push(
+            ethers.utils.solidityKeccak256(['bytes'], [encodedMessage])
+          )
+        }
+      }
+      return msgHashes
+  }
+
+  let [msghash] = await receiptTX(l1RpcProvider, L1_TX2.hash);
+  console.debug("hosea-debug: msghash ", msghash);
+
+
+  const receiptMSGTX = async(provider, msgHash, pollForPending, blocksToFetch) => {
+
+    const RELAYED_MESSAGE = ethers.utils.id(`RelayedMessage(bytes32)`)
+    const FAILED_RELAYED_MESSAGE = ethers.utils.id(`FailedRelayedMessage(bytes32)`)
+
+    let matches = []
+    
+    while (matches.length === 0) {
+      const blockNumber = await provider.getBlockNumber()
+      const startingBlock = Math.max(blockNumber - blocksToFetch, 0)
+      const successFilter = {
+        address: provider.messengerAddress,
+        topics: [RELAYED_MESSAGE],
+        fromBlock: startingBlock,
+      }
+      const failureFilter = {
+        address: provider.messengerAddress,
+        topics: [FAILED_RELAYED_MESSAGE],
+        fromBlock: startingBlock,
+      }
+      const successLogs = await provider.getLogs(successFilter)
+      const failureLogs = await provider.getLogs(failureFilter)
+      const logs = successLogs.concat(failureLogs)
+      matches = logs.filter(
+        log => log.topics[1] === msgHash
+      )
+
+      // exit loop after first iteration if not polling
+      if (!pollForPending) {
+        break
+      }
+
+      // pause awhile before trying again
+      await new Promise((r) => setTimeout(r, (blocksToFetch+150)))
+    }
+
+    console.debug("hosea-debug: msg matches", matches);
+
+    // Message was relayed in the past
+    if (matches.length > 0) {
+      if (matches.length > 1) {
+        throw Error(
+          'Found multiple transactions relaying the same message hash.'
+        )
+      }
+      return provider.getTransactionReceipt(matches[0].transactionHash)
+    } else {
+      return Promise.resolve(undefined)
+    }
+  }
+
+  let receiptL2 = await receiptMSGTX(l2RpcProvider, msghash, true, blocksToFetch);
+  console.debug("hosea-debug: receiptL2 ", receiptL2);
 
   console.log(
     "L1 clone:",
