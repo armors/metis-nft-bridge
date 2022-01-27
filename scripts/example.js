@@ -1,5 +1,5 @@
 const ethers = require('ethers')
-const { Watcher } = require('@eth-optimism/core-utils')
+
 const { predeploys, getContractInterface } = require('@metis.io/contracts')
 
 const demo721Artifact = require(`../artifacts/contracts/mock/ERC721Mock.sol/ERC721Mock.json`)
@@ -67,36 +67,6 @@ async function main() {
   const l2GasPrice = await l2RpcProvider.getGasPrice()
   console.log("Current gas price L1:", l1GasPrice.toString() )
   console.log("Current gas price L2:", l2GasPrice.toString() )
-
-  //  Tool that helps watches and waits for messages to be relayed between L1 and L2.
-  const watcher = new Watcher({
-    l1: {
-      provider: l1RpcProvider,
-      messengerAddress: l1MessengerAddress
-    },
-    l2: {
-      provider: l2RpcProvider,
-      messengerAddress: l2MessengerAddress
-    }
-  })
-
-  const lookupL1toL2 = async (hash) => {
-    console.log("L1 to L2 message")
-    console.log(`L1 TX hash: ${hash}`)
-    const [msgHash] = await watcher.getMessageHashesFromL1Tx(hash)
-    console.log(`Message hash: ${msgHash}`)
-    const L2Receipt = await watcher.getL2TransactionReceipt(msgHash)
-    console.log(`L2 TX hash: ${L2Receipt.transactionHash}`)
-  }
-  
-  const lookupL2toL1 = async (hash) => {
-    console.log("L2 to L1 message")
-    console.log(`L2 TX hash: ${hash}`)  
-    const [msgHash] = await watcher.getMessageHashesFromL2Tx(hash)
-    console.log(`Message hash: ${msgHash}`)
-    const L1Receipt = await watcher.getL1TransactionReceipt(msgHash)
-    console.log(`L1 TX hash: ${L1Receipt.transactionHash}`)
-  }
 
   //   get l1 libAddressManager
   let l1libAddressManager = await l1Messenger.libAddressManager();
