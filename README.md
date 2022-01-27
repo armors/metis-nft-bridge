@@ -36,3 +36,8 @@ node scripts/example.js
 npx hardhat help
 npx hardhat clean
 ```
+
+| Node | Port |
+| --- | --- |
+| L2 (Optimism dev node) | 	8545 |
+| L1 (hardhat dev node) | 	9545 |
