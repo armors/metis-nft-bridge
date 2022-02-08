@@ -17,12 +17,13 @@ import { INFTDeposit } from "../INFTDeposit.sol";
 
 contract L2NFTBridge is AccessControl, CrossDomainEnabled {
     
-    // l2 bridge
+    // L1 bridge
     address public destNFTBridge;
     
-    // l1 nft deposit
+    // L2 nft deposit
     address public localNFTDeposit;
 
+    // get current chainid
     function getChainID() internal view returns (uint256) {
         uint256 id;
         assembly {
@@ -31,6 +32,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
         return id;
     }
     
+    // nft supported[ 0, 1 ]
     enum nftenum {
         ERC721,
         ERC1155
@@ -50,15 +52,31 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
         _;
     }
 
+    /**
+     *  @param _localMessenger pre deploy messenger
+     */
     constructor(address _owner, address _localMessenger) CrossDomainEnabled(_localMessenger) {
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
     }
 
+    /**
+     * config 
+     * 
+     * @param _localNFTDeposit L2 deposit
+     * @param _destNFTBridge L1 bridge
+     */
     function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE){
         localNFTDeposit = _localNFTDeposit;
         destNFTBridge = _destNFTBridge;
     }
     
+    /**
+     * (L1 bridge) role config nft clone
+     * 
+     * @param destNFT nft on L1
+     * @param localNFT nft on this chain
+     * @param originNFTChainId origin NFT ChainId 
+     */
     function configNFT(address destNFT, address localNFT, uint256 originNFTChainId) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
         clone[localNFT] = destNFT;
         uint256 localChainId = getChainID();
@@ -69,6 +87,15 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
         }
     }
     
+    /**
+     * deposit nft into L1 deposit
+     *
+     * @param localNFT nft on this chain
+     * @param destTo owns nft on L1
+     * @param id nft id  
+     * @param nftStandard nft type
+     * @param destGas L1 gas
+     */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external onlyEOA() {
        
        uint256 amount = 0;

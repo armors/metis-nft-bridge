@@ -41,11 +41,12 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         return id;
     }
 
-    // nft supported
+    // nft supported[ 0, 1 ]
     enum nftenum {
-        ERC721,
+        ERC721, 
         ERC1155
     }
+
     // L1 nft => L2 nft
     mapping(address => address) public clone;
     
@@ -59,19 +60,44 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         require(!Address.isContract(msg.sender), "Account not EOA");
         _;
     }
+    
+    modifier onlySupportChainID(uint256 chainid) {
+        require((chainid == DEST_CHAINID || chainid == getChainID()), "ChainId not supported");
+        _;
+    }
 
+    /**
+     *  @param _owner admin role
+     *  @param _nftFactory factory role
+     *  @param _addressManager pre deploy Lib_AddressManager
+     *  @param _localMessenger pre deploy messenger
+     */
     constructor(address _owner, address _nftFactory, address _addressManager, address _localMessenger) CrossDomainEnabled(_localMessenger) {
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(NFT_FACTORY_ROLE, _nftFactory);
         addressManager = _addressManager;
     }
-    
+
+    /**
+     * config 
+     * 
+     * @param _localNFTDeposit L1 deposit
+     * @param _destNFTBridge L2 bridge
+     */
     function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE){
         localNFTDeposit = _localNFTDeposit;
         destNFTBridge = _destNFTBridge;
     }
     
-    function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGas) external payable onlyRole(NFT_FACTORY_ROLE) {
+    /**
+     * factory role config nft clone
+     * 
+     * @param localNFT nft on this chain
+     * @param destNFT nft on L2
+     * @param originNFTChainId origin NFT ChainId 
+     * @param destGas L2 gas
+     */
+    function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGas) external payable onlyRole(NFT_FACTORY_ROLE) onlySupportChainID(originNFTChainId) {
         clone[localNFT] = destNFT;
         uint256 localChainId = getChainID();
         
@@ -79,6 +105,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         if(localChainId == originNFTChainId){
             isOrigin[localNFT] = true;
         }
+        
         bytes memory message = abi.encodeWithSelector(
             INFTBridge.configNFT.selector,
             localNFT,
@@ -95,6 +122,16 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
         );
     }
 
+
+    /**
+     * deposit nft into L1 deposit
+     *
+     * @param localNFT nft on this chain
+     * @param destTo owns nft on L2
+     * @param id nft id  
+     * @param nftStandard nft type
+     * @param destGas L2 gas
+     */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external onlyEOA() {
        
        uint256 amount = 0;
