@@ -23,7 +23,7 @@ contract ERC1155Mock is ERC1155, AccessControl {
         _mint(account, id, amount, data);
     }
 
-    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public onlyRole(MINTER_ROLE) {
+    function batchMint(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public onlyRole(MINTER_ROLE) {
         _mintBatch(to, ids, amounts, data);
     }
 

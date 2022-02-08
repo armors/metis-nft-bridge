@@ -32,6 +32,12 @@ contract ERC721Mock is ERC721, AccessControl {
     _mint(_to, _tokenId);
   }
 
+  function batchMint(address _to, uint256[] calldata _tokenIds) external onlyRole(MINTER_ROLE) {
+    for (uint256 index; index < _tokenIds.length; index++) {
+      _mint(_to, _tokenIds[index]);
+    }
+  }
+
   function burn(uint256 _tokenId) external onlyRole(BURNER_ROLE) {
     _burn(_tokenId);
   }

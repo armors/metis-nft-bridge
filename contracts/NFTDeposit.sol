@@ -45,9 +45,18 @@ contract NFTDeposit is IERC721Receiver, ERC1155Receiver, AccessControl {
     function withdrawERC721(address _nft, address _to, uint256 _tokenId) external onlyRole(WITHDRAW_ROLE) onlyEOA(_to) {
         IERC721(_nft).safeTransferFrom(address(this), _to, _tokenId);
     }
+    
+    function batchWithdrawERC721(address _nft, address _to, uint256[] calldata _tokenIds) external onlyRole(WITHDRAW_ROLE) onlyEOA(_to) {
+        for (uint256 index; index < _tokenIds.length; index++) {
+            IERC721(_nft).safeTransferFrom(address(this), _to, _tokenIds[index]);
+        }
+    }
 
     function withdrawERC1155(address _nft, address _to, uint256 _tokenId, uint256 _amount) external onlyRole(WITHDRAW_ROLE) onlyEOA(_to) {
         IERC1155(_nft).safeTransferFrom(address(this), _to, _tokenId, _amount, "");
+    }
+    function batchWithdrawERC1155(address _nft, address _to, uint256[] calldata _tokenIds, uint256[] calldata _amounts) external onlyRole(WITHDRAW_ROLE) onlyEOA(_to) {
+        IERC1155(_nft).safeBatchTransferFrom(address(this), _to, _tokenIds, _amounts, "");
     }
     
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155Receiver, AccessControl) returns (bool) {

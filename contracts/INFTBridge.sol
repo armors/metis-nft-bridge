@@ -17,8 +17,8 @@ interface INFTBridge {
         address _nft,
         address _from,
         address _to,
-        uint256 _id,
-        uint256 _amount,
+        uint256[] calldata _ids,
+        uint256[] calldata _amounts,
         uint8 nftStandard
     )
         external;

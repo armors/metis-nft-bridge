@@ -6,4 +6,5 @@ pragma solidity ^0.8.9;
  */
 interface IStandarERC1155 {
     function mint(address to, uint256 id, uint256 amount, bytes memory data) external;
+    function batchMint(address to, uint256[] calldata ids, uint256[] calldata amounts, bytes memory data) external;
 }
