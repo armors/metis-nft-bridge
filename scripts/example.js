@@ -316,46 +316,52 @@ async function main() {
   console.log('L1_demo721 approve to L1_bridge and deposit')
 //   await L1_demo721.approve(L1_bridge.address, demo721_token_2);
   await L1_demo721.setApprovalForAll(L1_bridge.address, true);
+  
+  a1 = await L1_demo721.getApproved(demo721_token_2);
+  a2 = await L1_demo721.isApprovedForAll(l1Wallet.address, L1_bridge.address);
+
+  console.log("approve: ", a1, a2);
+
   //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
   L1_TX3 = await L1_bridge.depositTo(L1_demo721.address, l2Wallet.address, [demo721_token_2, demo721_token_3], 0, 200000);
   await L1_TX3.wait()
   
-  console.log('waiting peer')
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  console.log('waiting peer 1')
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   // -------------------
 
   let L1_demo721_token_2_owner = await L1_demo721.ownerOf(demo721_token_2);
   console.log('L1_demo721_token_2_owner', L1_demo721_token_2_owner);
 
-  let L2_demo721_token_2_owner = await L2_demo721.ownerOf(demo721_token_2);
-  console.log('L2_demo721_token_2_owner', L2_demo721_token_2_owner);
+//   let L2_demo721_token_2_owner = await L2_demo721.ownerOf(demo721_token_2);
+//   console.log('L2_demo721_token_2_owner', L2_demo721_token_2_owner);
   
   let l2balanceOf = await L2_demo721.balanceOf(l2Wallet.address);
   console.log(`   L2_demo721 mint to l2Wallet.address count:`, l2balanceOf.toString());
 
 
-// -----------------------------------------------------------  -------------------------------------------------------------
+// // -----------------------------------------------------------  -------------------------------------------------------------
 
-  console.log('L2_demo721 approve to L2_bridge')
-  await L2_demo721.setApprovalForAll(L2_bridge.address, true);
-  //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
-  L2_TX3 = await L2_bridge.depositTo(L2_demo721.address, l1Wallet.address, [demo721_token_2, demo721_token_3], 0, 200000);
-  await L2_TX3.wait()
+//   console.log('L2_demo721 approve to L2_bridge')
+//   await L2_demo721.setApprovalForAll(L2_bridge.address, true);
+//   //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
+//   L2_TX3 = await L2_bridge.depositTo(L2_demo721.address, l1Wallet.address, [demo721_token_2, demo721_token_3], 0, 200000);
+//   await L2_TX3.wait()
   
-  console.log('waiting peer')
-  await new Promise((resolve) => setTimeout(resolve, 100000));
+//   console.log('waiting peer 2')
+//   await new Promise((resolve) => setTimeout(resolve, 100000));
 
-  // -------------------
+//   // -------------------
   
-  L2_demo721_token_2_owner = await L2_demo721.ownerOf(demo721_token_2);
-  console.log('L2_demo721_token_2_owner', L2_demo721_token_2_owner);
+//   L2_demo721_token_2_owner = await L2_demo721.ownerOf(demo721_token_2);
+//   console.log('L2_demo721_token_2_owner', L2_demo721_token_2_owner);
 
-  L1_demo721_token_2_owner = await L1_demo721.ownerOf(demo721_token_2);
-  console.log('L1_demo721_token_2_owner', L1_demo721_token_2_owner);
+//   L1_demo721_token_2_owner = await L1_demo721.ownerOf(demo721_token_2);
+//   console.log('L1_demo721_token_2_owner', L1_demo721_token_2_owner);
 
-  l1balanceOf = await L1_demo721.balanceOf(l1Wallet.address);
-  console.log(`   L1_demo721  withdrow to l1Wallet.address demo721_token_2 count:`, l1balanceOf.toString());
+//   l1balanceOf = await L1_demo721.balanceOf(l1Wallet.address);
+//   console.log(`   L1_demo721  withdrow to l1Wallet.address demo721_token_2 count:`, l1balanceOf.toString());
   
   // ------------------------------------------------------------
 

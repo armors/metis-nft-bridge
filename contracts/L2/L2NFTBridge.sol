@@ -145,7 +145,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
             destTo,
             tokenIds,
             amounts,
-            nftStandard
+            uint8(nftStandard)
         );
         
         sendCrossDomainMessage(
@@ -161,28 +161,28 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
      * @param  _localNFT nft
      * @param  _destFrom  owns nft on l2 
      * @param  _localTo give to
-     * @param  _ids nft ids
+     * @param  _tokenIds nft ids
      * @param  _amounts nft amounts
      * @param  nftStandard nft type
      */
-    function finalizeDeposit(address _localNFT, address _destFrom, address _localTo, uint256[] calldata _ids, uint256[] calldata _amounts, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
+    function finalizeDeposit(address _localNFT, address _destFrom, address _localTo, uint256[] calldata _tokenIds, uint256[] calldata _amounts, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
         
         if(clone[_localNFT] == address(0)){
             // TODO fail event
         }
 
         uint256[] memory withdrawIds;
-        uint256[] memory mintIds;
-
         uint256[] memory withdrawAmounts;
+
+        uint256[] memory mintIds;
         uint256[] memory mintAmounts;
 
-        for (uint256 index; index < _ids.length; index++) {
-            if(isDeposit[_localNFT][_ids[index]]){
-                withdrawIds[index] = _ids[index];
+        for (uint256 index; index < _tokenIds.length; index++) {
+            if(isDeposit[_localNFT][_tokenIds[index]]){
+                withdrawIds[index] = _tokenIds[index];
                 withdrawAmounts[index] = _amounts[index];
             }else{
-                mintIds[index] = _ids[index];
+                mintIds[index] = _tokenIds[index];
                 mintAmounts[index] = _amounts[index];
             }
         }
