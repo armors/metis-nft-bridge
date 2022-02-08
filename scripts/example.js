@@ -74,6 +74,8 @@ async function main() {
   let METIS_MANAGER = await l1libAddressManagerObj.getAddress("METIS_MANAGER");
   console.log("L1 METIS_MANAGER:", METIS_MANAGER);
 
+  // ------------------------------------------------------------  ------------------------------------------------------------
+
   let MVM_DiscountOracle = await l1libAddressManagerObj.getAddress("MVM_DiscountOracle");
   const MVM_DiscountOracleObj = l1MVM_DiscountOracle.connect(l1Wallet).attach(MVM_DiscountOracle)
   console.log("L1 MVM_DiscountOracle:", MVM_DiscountOracle);
@@ -81,7 +83,7 @@ async function main() {
   L1_TX0.wait();
   console.log("L1 METIS_MANAGER set white list")
 
-  // ------------------------------------------------------------  
+  // ------------------------------------------------------------  ------------------------------------------------------------
   // Deploy ERC721 on L1.
   console.log('Deploying L1_demo721 ERC721 on L1...')
   const L1_demo721 = await demo721.connect(l1Wallet).deploy(
@@ -92,12 +94,19 @@ async function main() {
   await L1_demo721.deployTransaction.wait();
   console.log(`   L1_demo721 deployed @ ${L1_demo721.address}`)
 
-  let L1_demo721_token_1 = 1;
+  let demo721_token_1 = 1;
   let demo721_token_2 = 2;
-  await L1_demo721.mint(l1Wallet.address, L1_demo721_token_1);
+  let demo721_token_3 = 3;
+  let demo721_token_4 = 4;
+
+  await L1_demo721.mint(l1Wallet.address, demo721_token_1);
   await L1_demo721.mint(l1Wallet.address, demo721_token_2);
+  await L1_demo721.mint(l1Wallet.address, demo721_token_3);
+  await L1_demo721.mint(l1Wallet.address, demo721_token_4);
+
   let l1balanceOf = await L1_demo721.balanceOf(l1Wallet.address);
-  console.log(`   L1_demo721 mint to l1_Wallet.address tokenIds with {1、2} total:`, l1balanceOf.toString());
+  
+  console.log(`   L1_demo721 mint to l1_Wallet.address tokenIds with {1、2、3、4} total:`, l1balanceOf.toString());
 
   // ------------------------------------------------------------
   
@@ -111,7 +120,7 @@ async function main() {
   await L2_demo721.deployTransaction.wait();
   console.log(`   L2_demo721 deployed @ ${L2_demo721.address}`)
 
-  // ------------------------------------------------------------
+  // -----------------------------------------------------------  -------------------------------------------------------------
   // Deploy l1 bridge on L1.
   console.log('Deploying bridge on L1...')
   const L1_bridge = await L1NFTBridge.connect(l1Wallet).deploy(
@@ -133,7 +142,7 @@ async function main() {
   await L2_bridge.deployTransaction.wait();
   console.log(`   L2_bridge deployed @ ${L2_bridge.address}`)
 
-  // ------------------------------------------------------------
+  // -----------------------------------------------------------  -------------------------------------------------------------
   console.log('clone NFT(L2_demo721) Grant mint role to L2 bridge...')
   let mintRole = await L2_demo721.MINTER_ROLE();
   console.log("mintRole:", mintRole);
@@ -141,7 +150,7 @@ async function main() {
   await L2_TX1.wait()
   console.log('Grant done.')
 
-  // ------------------------------------------------------------
+  // -----------------------------------------------------------  -------------------------------------------------------------
   console.log('Deploying L1 NFTDeposit on L1...')
   const L1_NFTDeposit = await NFTDeposit.connect(l1Wallet).deploy(
     l1Wallet.address, // owner
@@ -161,7 +170,7 @@ async function main() {
   await L2_NFTDeposit.deployTransaction.wait();
   console.log(`   L2 NFTDeposit deployed @ ${L2_NFTDeposit.address}`)
 
-  // ------------------------------------------------------------
+  // -----------------------------------------------------------  -------------------------------------------------------------
 
   console.log(`init L1 and L2 config`)
   L1_TX1 = await L1_bridge.set(L1_NFTDeposit.address,L2_bridge.address);
@@ -171,6 +180,8 @@ async function main() {
   await L2_TX2.wait()
   console.log(`init done.`)
 
+
+// -----------------------------------------------------------  -------------------------------------------------------------
   let blocksToFetch = await l2RpcProvider.getBlockNumber();
  
 
@@ -293,19 +304,20 @@ async function main() {
   console.debug("hosea-debug: receiptL2 ", receiptL2);
 
   console.log(
-    "L1 clone:",
+    "L1 clone and origin:",
     await L1_bridge.clone(L1_demo721.address),
     await L1_bridge.isOrigin(L1_demo721.address),
-    "L2 clone:",
+    "L2 clone and origin:",
     await L2_bridge.clone(L2_demo721.address),
     await L2_bridge.isOrigin(L2_demo721.address),
   )
 
-  // ------------------------------------------------------------
-  console.log('L1_demo721 approve to L1_bridge')
-  await L1_demo721.approve(L1_bridge.address, demo721_token_2);
+  // -----------------------------------------------------------  -------------------------------------------------------------
+  console.log('L1_demo721 approve to L1_bridge and deposit')
+//   await L1_demo721.approve(L1_bridge.address, demo721_token_2);
+  await L1_demo721.setApprovalForAll(L1_bridge.address, true);
   //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
-  L1_TX3 = await L1_bridge.depositTo(L1_demo721.address, l2Wallet.address, demo721_token_2, 0, 200000);
+  L1_TX3 = await L1_bridge.depositTo(L1_demo721.address, l2Wallet.address, [demo721_token_2, demo721_token_3], 0, 200000);
   await L1_TX3.wait()
   
   console.log('waiting peer')
@@ -320,15 +332,15 @@ async function main() {
   console.log('L2_demo721_token_2_owner', L2_demo721_token_2_owner);
   
   let l2balanceOf = await L2_demo721.balanceOf(l2Wallet.address);
-  console.log(`   L2_demo721 mint to l2Wallet.address demo721_token_2 count:`, l2balanceOf.toString());
+  console.log(`   L2_demo721 mint to l2Wallet.address count:`, l2balanceOf.toString());
 
 
-  // ------------------------------------------------------------
+// -----------------------------------------------------------  -------------------------------------------------------------
 
   console.log('L2_demo721 approve to L2_bridge')
-  await L2_demo721.approve(L2_bridge.address, demo721_token_2);
+  await L2_demo721.setApprovalForAll(L2_bridge.address, true);
   //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
-  L2_TX3 = await L2_bridge.depositTo(L2_demo721.address, l1Wallet.address, demo721_token_2, 0, 200000);
+  L2_TX3 = await L2_bridge.depositTo(L2_demo721.address, l1Wallet.address, [demo721_token_2, demo721_token_3], 0, 200000);
   await L2_TX3.wait()
   
   console.log('waiting peer')
