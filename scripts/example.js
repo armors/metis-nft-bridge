@@ -248,7 +248,6 @@ async function main() {
   let [msghash] = await receiptTX(l1RpcProvider, L1_TX2.hash);
   console.debug("hosea-debug: msghash ", msghash);
 
-
   const receiptMSGTX = async(provider, msgHash, pollForPending, blocksToFetch) => {
 
     const RELAYED_MESSAGE = ethers.utils.id(`RelayedMessage(bytes32)`)

@@ -15,8 +15,12 @@ import { CrossDomainEnabled } from "../gateway/CrossDomainEnabled.sol";
 import { INFTBridge } from "../INFTBridge.sol";
 import { INFTDeposit } from "../INFTDeposit.sol";
 
+import { console } from "../console.sol";
+
 contract L1NFTBridge is AccessControl, CrossDomainEnabled {
     
+    
+
     // configNFT role
     bytes32 public constant NFT_FACTORY_ROLE = keccak256("NFT_FACTORY_ROLE");
 
@@ -120,6 +124,8 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
             message,
             msg.value
         );
+
+        console.log("console: %s %s %s %s", localNFT, destNFT, originNFTChainId);
     }
 
     /** batch transfer 721 token
