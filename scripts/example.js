@@ -468,7 +468,7 @@ async function DepositL1ToL2(L1Bridge, L1Mock721, L2Mock721, L1Mock721Wallet, to
     let L1_TX1 = await L1Bridge.connect(L1Mock721Wallet).depositTo(L1Mock721.address, destTo.address, tokenID, nftStandard, destGas);
     await L1_TX1.wait()
     
-    console.log('\n  waiting peer L1 => L2 depositTo')
+    console.log('\n  waiting peer L1 => L2 depositTo { L1 ali => L2 bob }')
     await new Promise((resolve) => setTimeout(resolve, wait));
   
     await check(L1Mock721, L2Mock721, tokenID, L1Mock721Wallet, destTo);
@@ -482,7 +482,7 @@ async function DepositL2ToL1(L2Bridge, L1Mock721, L2Mock721, L2Mock721Wallet, to
     L2_TX1 = await L2Bridge.connect(L2Mock721Wallet).depositTo(L2Mock721.address, destTo.address, tokenID, nftStandard, destGas);
     await L2_TX1.wait()
     
-    console.log('\n  waiting peer L2 => L1 depositTo')
+    console.log('\n  waiting peer L2 => L1 depositTo { L2 bob => L1 jno } ')
     await new Promise((resolve) => setTimeout(resolve, 10000));
     
     await check(L1Mock721, L2Mock721, tokenID, L2Mock721Wallet, destTo);
@@ -534,9 +534,9 @@ async function init(config) {
     let mockERC721 = await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
  
     await deployBridgeConfig(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit, mockERC721.L1, mockERC721.L2, ChainIDs.L1, config.gas.L2, config.wait.v1, wallets.L1.fac);
-    // ali => bob
+    // L1 ali => L2 bob
     await DepositL1ToL2(bridges.L1.bridge, mockERC721.L1, mockERC721.L2, wallets.L1.ali, crossDomainId, wallets.L2.bob, config.nftStandard.ERC721, config.gas.L2, config.wait.v1);
-    // bob => jno
+    // L2 bob => L1 jno
     await DepositL2ToL1(bridges.L2.bridge, mockERC721.L1, mockERC721.L2, wallets.L2.bob, crossDomainId, wallets.L1.jno, config.nftStandard.ERC721, config.gas.L1, config.wait.v2);
 
     // console.log("\n  accounts:", accounts);
