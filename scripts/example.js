@@ -332,7 +332,7 @@ async function main() {
   await L2_TX3.wait()
   
   console.log('waiting peer')
-  await new Promise((resolve) => setTimeout(resolve, 100000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   // -------------------
   
