@@ -211,9 +211,10 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         
         if(nftenum.ERC721 == nftStandard) {
             if(isDeposit[_localNFT][id]){
+                emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
                 INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _localTo, id);
             }else{
-                IStandarERC721(_localNFT).mint(_localTo, id);
+                // IStandarERC721(_localNFT).mint(_localTo, id);
             }
         }
 
@@ -224,6 +225,6 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
                 IStandarERC1155(_localNFT).mint(_localTo, id, _amount, "");
             }
         }
-        emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
+        // emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
     }
 }

@@ -140,7 +140,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      */
     function _messenger(address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGas) internal {
 
-        bytes memory message =  abi.encodeWithSelector(
+        bytes memory message = abi.encodeWithSelector(
             ICrollDomain.finalizeDeposit.selector,
             destNFT,
             from,

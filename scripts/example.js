@@ -41,16 +41,123 @@ const config = {
         L2: 30000000
     },
     gas:{
-        L1: 2000000,
+        L1: 20000000,
         L2: 2000000,
     },
     wait:{
         v1: 3000,
+        v2: 5000,
+    },
+    nftStandard: {
+        ERC721: 0,
+        ERC1155: 1
     }
 }
 
 let accounts = [];
 
+
+const receiptTX = async(provider, txHash) => {
+    const receipt = await provider.getTransactionReceipt(txHash)
+    if (!receipt) {
+      return []
+    }
+    console.debug("hosea-debug tx receipt: ", receipt);
+
+    const msgHashes = []
+    const sentMessageEventId = ethers.utils.id(
+      'SentMessage(address,address,bytes,uint256,uint256,uint256)'
+    )
+
+    console.debug("hosea-debug: sendMessage Event ", sentMessageEventId);
+
+    const l2CrossDomainMessengerRelayAbi = [
+      'function relayMessage(address _target,address _sender,bytes memory _message,uint256 _messageNonce)',
+    ]
+    const l2CrossDomainMessengerRelayinterface = new ethers.utils.Interface(
+      l2CrossDomainMessengerRelayAbi
+    )
+
+    for (const log of receipt.logs) {
+        console.debug("hosea-debug: log.topics ", log.topics);
+        // call l1 Messenger and send cross domain msg
+      if (log.address === L1MessengerAddress && log.topics[0] === sentMessageEventId) {
+          const [sender, message, messageNonce] = ethers.utils.defaultAbiCoder.decode(
+            ['address', 'bytes', 'uint256'],
+            log.data
+          )
+  
+          const [target] = ethers.utils.defaultAbiCoder.decode(
+            ['address'],
+            log.topics[1]
+          )
+
+          console.debug("hosea-debug: dest target ", target);
+
+          const encodedMessage = l2CrossDomainMessengerRelayinterface.encodeFunctionData(
+            'relayMessage',
+            [target, sender, message, messageNonce]
+          )
+          console.debug("hosea-debug: relayMessage ", [target, sender, message, messageNonce]);
+  
+          msgHashes.push(
+            ethers.utils.solidityKeccak256(['bytes'], [encodedMessage])
+          )
+        }
+      }
+      return msgHashes
+}
+
+const receiptMSGTX = async(provider, msgHash, pollForPending, blocksToFetch) => {
+
+    const RELAYED_MESSAGE = ethers.utils.id(`RelayedMessage(bytes32)`)
+    const FAILED_RELAYED_MESSAGE = ethers.utils.id(`FailedRelayedMessage(bytes32)`)
+
+    let matches = []
+    
+    while (matches.length === 0) {
+      const blockNumber = await provider.getBlockNumber()
+      const startingBlock = Math.max(blockNumber - blocksToFetch, 0)
+      const successFilter = {
+        address: provider.messengerAddress,
+        topics: [RELAYED_MESSAGE],
+        fromBlock: startingBlock,
+      }
+      const failureFilter = {
+        address: provider.messengerAddress,
+        topics: [FAILED_RELAYED_MESSAGE],
+        fromBlock: startingBlock,
+      }
+      const successLogs = await provider.getLogs(successFilter)
+      const failureLogs = await provider.getLogs(failureFilter)
+      const logs = successLogs.concat(failureLogs)
+      matches = logs.filter(
+        log => log.topics[1] === msgHash
+      )
+
+      // exit loop after first iteration if not polling
+      if (!pollForPending) {
+        break
+      }
+
+      // pause awhile before trying again
+      await new Promise((r) => setTimeout(r, (blocksToFetch+150)))
+    }
+
+    console.debug("hosea-debug: msg matches", matches);
+
+    // Message was relayed in the past
+    if (matches.length > 0) {
+      if (matches.length > 1) {
+        throw Error(
+          'Found multiple transactions relaying the same message hash.'
+        )
+      }
+      return provider.getTransactionReceipt(matches[0].transactionHash)
+    } else {
+      return Promise.resolve(undefined)
+    }
+}
 
 async function sendETH(owner, _wallet, _gasLimit, _value){
     let balance = await _wallet.getBalance();
@@ -113,8 +220,6 @@ async function initWallet(config, l1RpcProvider, l2RpcProvider, stepValue) {
     
     console.log(
         "initWallet:",
-        "\n accounts: ",
-        accounts, 
         "\n L1 balances: ",
         L1Balances, 
         "\n L2 balances: ",
@@ -240,6 +345,12 @@ async function deployBridge(L1BridgeOwner, L2BridgeOwner, L1Factory, L1LibAddres
     await L1Bridge.deployTransaction.wait();
     console.log(`\n  bridge deployed on L1 @ ${L1Bridge.address}`)
 
+    // L1 deposit
+    const L1Deposit = await NFTDeposit.connect(L1BridgeOwner).deploy(
+        L1BridgeOwner.address, // owner
+        L1Bridge.address // withdraw
+    )
+
     // L2 bridge
     const L2Bridge = await L2NFTBridge.connect(L2BridgeOwner).deploy(
         L2BridgeOwner.address, // owner
@@ -248,11 +359,6 @@ async function deployBridge(L1BridgeOwner, L2BridgeOwner, L1Factory, L1LibAddres
     await L2Bridge.deployTransaction.wait();
     console.log(`\n  bridge deployed on L2 @ ${L2Bridge.address}`)
 
-    // L1 deposit
-    const L1Deposit = await NFTDeposit.connect(L1BridgeOwner).deploy(
-        L1BridgeOwner.address, // owner
-        L1Bridge.address // withdraw
-  )
     await L1Deposit.deployTransaction.wait();
     console.log(`\n  bridge deposit deployed on L1 @ ${L1Deposit.address}`)
 
@@ -318,9 +424,7 @@ async function mockDeployERC721(L1Wallet, L2Wallet, presetTokenIds, L2Bridge){
     }
 }
 
-// 2000000
-async function deployBridgeConfig(L1Bridge, L2Bridge, L1Deposit, L2Deposit, L1Mock721, L2Mock721, L1ChainId, L2Gas, wait){
-
+async function deployBridgeConfig(L1Bridge, L2Bridge, L1Deposit, L2Deposit, L1Mock721, L2Mock721, L1ChainId, L2Gas, wait, L1Factory){
     console.log(`\n  call set on L1 and L2`)
     L1_TX1 = await L1Bridge.set(L1Deposit.address,L2Bridge.address);
     await L1_TX1.wait()
@@ -329,21 +433,76 @@ async function deployBridgeConfig(L1Bridge, L2Bridge, L1Deposit, L2Deposit, L1Mo
     console.log(`\n  set done.`) 
   
     console.log(`\n  project config clone nft.`)
-    L1_TX2 = await L1Bridge.configNFT(L1Mock721.address, L2Mock721.address, L1ChainId, L2Gas);
+    L1_TX2 = await L1Bridge.connect(L1Factory).configNFT(L1Mock721.address, L2Mock721.address, L1ChainId, L2Gas);
     await L1_TX2.wait()
-    console.log('waiting peer L1 => L2 ')
+    console.log('\n  waiting peer L1 => L2 configNFT ')
     await new Promise((resolve) => setTimeout(resolve, wait));
 
-    console.log(
-        "L1 clone:",
-        await L1Bridge.clone(L1Mock721.address),
-        await L1Bridge.isOrigin(L1Mock721.address),
-        "L2 clone:",
-        await L2Bridge.clone(L2Mock721.address),
-        await L2Bridge.isOrigin(L2Mock721.address),
-      )
+    let log = {
+        L1: [
+            accounts[await L1Bridge.clone(L1Mock721.address)],
+            await L1Bridge.isOrigin(L1Mock721.address),
+        ],
+        L2: [
+            accounts[await L2Bridge.clone(L2Mock721.address)],
+            await L2Bridge.isOrigin(L2Mock721.address),
+        ]
+    }
+
+    console.log("\n  clone and origin:", log);
 }
 
+async function check(L1Mock721, L2Mock721, tokenID, walletFrom, WalletTo){
+    let tokenIDOwnerL1 = await L1Mock721.ownerOf(tokenID);
+    console.log(`\n  tokenID {${tokenID}} owner is {${accounts[tokenIDOwnerL1]}} on L1`);
+    
+    let tokenIDOwnerL2 = await L2Mock721.ownerOf(tokenID);
+    console.log(`\n  tokenID {${tokenID}} owner is {${accounts[tokenIDOwnerL2]}} on L2`);
+}
+
+async function DepositL1ToL2(L1Bridge, L1Mock721, L2Mock721, L1Mock721Wallet, tokenID, destTo, nftStandard, destGas, wait) {
+
+    await L1Mock721.connect(L1Mock721Wallet).approve(L1Bridge.address, tokenID);
+
+    // function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas)
+    let L1_TX1 = await L1Bridge.connect(L1Mock721Wallet).depositTo(L1Mock721.address, destTo.address, tokenID, nftStandard, destGas);
+    await L1_TX1.wait()
+    
+    console.log('\n  waiting peer L1 => L2 depositTo')
+    await new Promise((resolve) => setTimeout(resolve, wait));
+  
+    await check(L1Mock721, L2Mock721, tokenID, L1Mock721Wallet, destTo);
+
+}
+
+async function DepositL2ToL1(L2Bridge, L1Mock721, L2Mock721, L2Mock721Wallet, tokenID, destTo, nftStandard, destGas, wait) {
+
+    await L2Mock721.connect(L2Mock721Wallet).approve(L2Bridge.address, tokenID);
+    
+    L2_TX1 = await L2Bridge.connect(L2Mock721Wallet).depositTo(L2Mock721.address, destTo.address, tokenID, nftStandard, destGas);
+    await L2_TX1.wait()
+    
+    console.log('\n  waiting peer L2 => L1 depositTo')
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    
+    await check(L1Mock721, L2Mock721, tokenID, L2Mock721Wallet, destTo);
+}
+
+async function eventEmit(bridges){
+     bridges.L1.bridge.on("DEPOSIT_TO", (a,b,c,d,e,f) => {
+        console.log("\n  L1 DEPOSIT_TO:",a,b,c,d,e,f);
+    });
+    bridges.L1.bridge.on("FINALIZE_DEPOSIT", (a,b,c,d,e,f) => {
+        console.log("\n  L1 FINALIZE_DEPOSIT:",a,b,c,d,e,f);
+    });
+
+    bridges.L2.bridge.on("DEPOSIT_TO", (a,b,c,d,e,f) => {
+        console.log("\n  L2 DEPOSIT_TO:",a,b,c,d,e,f);
+    });
+    bridges.L2.bridge.on("FINALIZE_DEPOSIT", (a,b,c,d,e,f) => {
+        console.log("\n  L2 FINALIZE_DEPOSIT:",a,b,c,d,e,f);
+    });
+}
 
 async function init(config) {
 
@@ -357,6 +516,8 @@ async function init(config) {
 
     let presetTokenIds = [1, 2, 3, 4, 5];
 
+    let crossDomainId = presetTokenIds[2];
+    
     // call
     let wallets = await initWallet(config, l1RpcProvider, l2RpcProvider, tenETH);
 
@@ -372,7 +533,15 @@ async function init(config) {
 
     let mockERC721 = await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
  
-    await deployBridgeConfig(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit, mockERC721.L1, mockERC721.L2, ChainIDs.L1, config.gas.L2, config.wait.v1);
+    await deployBridgeConfig(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit, mockERC721.L1, mockERC721.L2, ChainIDs.L1, config.gas.L2, config.wait.v1, wallets.L1.fac);
+    // ali => bob
+    await DepositL1ToL2(bridges.L1.bridge, mockERC721.L1, mockERC721.L2, wallets.L1.ali, crossDomainId, wallets.L2.bob, config.nftStandard.ERC721, config.gas.L2, config.wait.v1);
+    // bob => jno
+    await DepositL2ToL1(bridges.L2.bridge, mockERC721.L1, mockERC721.L2, wallets.L2.bob, crossDomainId, wallets.L1.jno, config.nftStandard.ERC721, config.gas.L1, config.wait.v2);
+
+    // console.log("\n  accounts:", accounts);
+
+    // eventEmit(bridges);
 }
 
 async function main() {
@@ -384,192 +553,3 @@ async function main() {
 }
 
 main();
-
-async function main_back() {
-
-  // ------------------------------------------------------------  
-
-
-  // ------------------------------------------------------------
-
-  // ------------------------------------------------------------
-
-
-  
-  // ------------------------------------------------------------
-
-  console.log('waiting peer L1 => L2 ')
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  const receiptTX = async(provider, txHash) => {
-    const receipt = await provider.getTransactionReceipt(txHash)
-    if (!receipt) {
-      return []
-    }
-    console.debug("hosea-debug tx receipt: ", receipt);
-
-    const msgHashes = []
-    const sentMessageEventId = ethers.utils.id(
-      'SentMessage(address,address,bytes,uint256,uint256,uint256)'
-    )
-
-    console.debug("hosea-debug: sendMessage Event ", sentMessageEventId);
-
-    const l2CrossDomainMessengerRelayAbi = [
-      'function relayMessage(address _target,address _sender,bytes memory _message,uint256 _messageNonce)',
-    ]
-    const l2CrossDomainMessengerRelayinterface = new ethers.utils.Interface(
-      l2CrossDomainMessengerRelayAbi
-    )
-
-    for (const log of receipt.logs) {
-        console.debug("hosea-debug: log.topics ", log.topics);
-        // call l1 Messenger and send cross domain msg
-      if (log.address === L1MessengerAddress && log.topics[0] === sentMessageEventId) {
-          const [sender, message, messageNonce] = ethers.utils.defaultAbiCoder.decode(
-            ['address', 'bytes', 'uint256'],
-            log.data
-          )
-  
-          const [target] = ethers.utils.defaultAbiCoder.decode(
-            ['address'],
-            log.topics[1]
-          )
-
-          console.debug("hosea-debug: dest target ", target);
-
-          const encodedMessage = l2CrossDomainMessengerRelayinterface.encodeFunctionData(
-            'relayMessage',
-            [target, sender, message, messageNonce]
-          )
-          console.debug("hosea-debug: relayMessage ", [target, sender, message, messageNonce]);
-  
-          msgHashes.push(
-            ethers.utils.solidityKeccak256(['bytes'], [encodedMessage])
-          )
-        }
-      }
-      return msgHashes
-  }
-
-  let [msghash] = await receiptTX(l1RpcProvider, L1_TX2.hash);
-  console.debug("hosea-debug: msghash ", msghash);
-
-
-  const receiptMSGTX = async(provider, msgHash, pollForPending, blocksToFetch) => {
-
-    const RELAYED_MESSAGE = ethers.utils.id(`RelayedMessage(bytes32)`)
-    const FAILED_RELAYED_MESSAGE = ethers.utils.id(`FailedRelayedMessage(bytes32)`)
-
-    let matches = []
-    
-    while (matches.length === 0) {
-      const blockNumber = await provider.getBlockNumber()
-      const startingBlock = Math.max(blockNumber - blocksToFetch, 0)
-      const successFilter = {
-        address: provider.messengerAddress,
-        topics: [RELAYED_MESSAGE],
-        fromBlock: startingBlock,
-      }
-      const failureFilter = {
-        address: provider.messengerAddress,
-        topics: [FAILED_RELAYED_MESSAGE],
-        fromBlock: startingBlock,
-      }
-      const successLogs = await provider.getLogs(successFilter)
-      const failureLogs = await provider.getLogs(failureFilter)
-      const logs = successLogs.concat(failureLogs)
-      matches = logs.filter(
-        log => log.topics[1] === msgHash
-      )
-
-      // exit loop after first iteration if not polling
-      if (!pollForPending) {
-        break
-      }
-
-      // pause awhile before trying again
-      await new Promise((r) => setTimeout(r, (blocksToFetch+150)))
-    }
-
-    console.debug("hosea-debug: msg matches", matches);
-
-    // Message was relayed in the past
-    if (matches.length > 0) {
-      if (matches.length > 1) {
-        throw Error(
-          'Found multiple transactions relaying the same message hash.'
-        )
-      }
-      return provider.getTransactionReceipt(matches[0].transactionHash)
-    } else {
-      return Promise.resolve(undefined)
-    }
-  }
-
-  let receiptL2 = await receiptMSGTX(l2RpcProvider, msghash, true, blocksToFetch);
-  console.debug("hosea-debug: receiptL2 ", receiptL2);
-
-  console.log(
-    "L1 clone:",
-    await L1Bridge.clone(L1Mock721.address),
-    await L1Bridge.isOrigin(L1Mock721.address),
-    "L2 clone:",
-    await L2Bridge.clone(L2Mock721.address),
-    await L2Bridge.isOrigin(L2Mock721.address),
-  )
-
-  // ------------------------------------------------------------
-  console.log('L1Mock721 approve to L1Bridge')
-  await L1Mock721.approve(L1Bridge.address, demo721_token_2);
-  //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
-  L1_TX3 = await L1Bridge.depositTo(L1Mock721.address, L2Wallet.address, demo721_token_2, 0, 200000);
-  await L1_TX3.wait()
-  
-  console.log('waiting peer')
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  // -------------------
-
-  let L1Mock721_token_2_owner = await L1Mock721.ownerOf(demo721_token_2);
-  console.log('L1Mock721_token_2_owner', L1Mock721_token_2_owner);
-
-  let L2Mock721_token_2_owner = await L2Mock721.ownerOf(demo721_token_2);
-  console.log('L2Mock721_token_2_owner', L2Mock721_token_2_owner);
-  
-  let l2balanceOf = await L2Mock721.balanceOf(L2Wallet.address);
-  console.log(`   L2Mock721 mint to L2Wallet.address demo721_token_2 count:`, l2balanceOf.toString());
-
-
-  // ------------------------------------------------------------
-
-  console.log('L2Mock721 approve to L2Bridge')
-  await L2Mock721.approve(L2Bridge.address, demo721_token_2);
-  //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
-  L2_TX3 = await L2Bridge.depositTo(L2Mock721.address, l1Wallet.address, demo721_token_2, 0, 200000);
-  await L2_TX3.wait()
-  
-  console.log('waiting peer')
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  // -------------------
-  
-  L2Mock721_token_2_owner = await L2Mock721.ownerOf(demo721_token_2);
-  console.log('L2Mock721_token_2_owner', L2Mock721_token_2_owner);
-
-  L1Mock721_token_2_owner = await L1Mock721.ownerOf(demo721_token_2);
-  console.log('L1Mock721_token_2_owner', L1Mock721_token_2_owner);
-
-  l1balanceOf = await L1Mock721.balanceOf(l1Wallet.address);
-  console.log(`   L1Mock721  withdrow to l1Wallet.address demo721_token_2 count:`, l1balanceOf.toString());
-  
-  // ------------------------------------------------------------
-
-}
-
-// main()
-//   .then(() => process.exit(0))
-//   .catch(error => {
-//     console.error(error)
-//     process.exit(1)
-//   })
