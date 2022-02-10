@@ -17,6 +17,50 @@ import { INFTDeposit } from "../INFTDeposit.sol";
 
 contract L2NFTBridge is AccessControl, CrossDomainEnabled {
     
+    event EVENT_SET(
+        address indexed _deposit,
+        address indexed _bridge
+    );
+
+    event CONFIT_NFT(
+        address indexed _localNFT,
+        address indexed _destNFT,
+        uint256 _chainID
+    );
+    
+    event DEPOSIT_TO(
+        address _nft,
+        address _from,
+        address _to,
+        uint256[] _tokenIds,
+        uint256[] _amounts,
+        uint8 nftStandard
+    );
+    
+    event FINALIZE_DEPOSIT(
+        address _nft,
+        address _from,
+        address _to,
+        uint256[] _tokenIds,
+        uint256[] _amounts,
+        uint8 nftStandard
+    );
+
+    event EVENT_ERC721(
+        address _to,
+        uint256[] _tokenIds,
+        uint256 _type
+    );
+
+    event FINALIZE_DEPOSIT_DEBUG(
+        uint256[] a,
+        uint256[] b,
+        uint256[] c,
+        uint256[] d,
+        uint256 e,
+        uint256 f
+    );
+
     // L1 bridge
     address public destNFTBridge;
     
@@ -113,7 +157,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
        
         require(clone[localNFT] != address(0), "Config NFT cross-domain first.");
 
-        uint256[] memory amounts;
+        uint256[] memory amounts = new uint[](0);
         
         if(nftenum.ERC721 == nftStandard) {
             
@@ -121,6 +165,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
             
             for (uint256 index; index < tokenIds.length; index++) {
                 isDeposit[localNFT][tokenIds[index]] = true;
+                amounts[index] = 1;
             }
         }
        
@@ -136,6 +181,8 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
             IERC1155(localNFT).safeBatchTransferFrom(msg.sender, localNFTDeposit, tokenIds, amounts, "");
         }
     
+        require(amounts.length == tokenIds.length, "Array lengths do not match.");
+
         address destNFT = clone[localNFT];
 
         bytes memory message =  abi.encodeWithSelector(
@@ -155,7 +202,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
             msg.value
         );
     }
-    
+
     /** clone nft
      *
      * @param  _localNFT nft
@@ -165,43 +212,138 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled {
      * @param  _amounts nft amounts
      * @param  nftStandard nft type
      */
-    function finalizeDeposit(address _localNFT, address _destFrom, address _localTo, uint256[] calldata _tokenIds, uint256[] calldata _amounts, nftenum nftStandard) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
+    function finalizeDeposit(
+        address _localNFT, 
+        address _destFrom, 
+        address _localTo, 
+        uint256[] calldata _tokenIds, 
+        uint256[] calldata _amounts, 
+        nftenum nftStandard
+    ) external virtual onlyFromCrossDomainAccount(destNFTBridge) {
         
         if(clone[_localNFT] == address(0)){
             // TODO fail event
         }
+    
+        (uint256[] memory withdrawIds,
+        uint256[] memory withdrawAmounts,
+        uint256[] memory mintIds,
+        uint256[] memory mintAmounts,
+        uint256 withdrawTotal,
+        uint256 mintTotal) = _finalizeDeposit(
+            _localNFT,
+            _tokenIds, 
+            _amounts
+        );
+    
+        emit FINALIZE_DEPOSIT_DEBUG(
+            withdrawIds, 
+            withdrawAmounts, 
+            mintIds, 
+            mintAmounts,
+            withdrawTotal,
+            mintTotal
+        );
 
-        uint256[] memory withdrawIds;
-        uint256[] memory withdrawAmounts;
-
-        uint256[] memory mintIds;
-        uint256[] memory mintAmounts;
-
-        for (uint256 index; index < _tokenIds.length; index++) {
-            if(isDeposit[_localNFT][_tokenIds[index]]){
-                withdrawIds[index] = _tokenIds[index];
-                withdrawAmounts[index] = _amounts[index];
-            }else{
-                mintIds[index] = _tokenIds[index];
-                mintAmounts[index] = _amounts[index];
-            }
-        }
+        emit FINALIZE_DEPOSIT(
+            _localNFT, 
+            _destFrom, 
+            _localTo, 
+            _tokenIds, 
+            _amounts, 
+            uint8(nftStandard)
+        );
 
         if(nftenum.ERC721 == nftStandard) {
-            if(withdrawIds.length > 0){
-                INFTDeposit(localNFTDeposit).batchWithdrawERC721(_localNFT, _localTo, withdrawIds);
-            }
-            if(mintIds.length > 0){
-                IStandarERC721(_localNFT).batchMint(_localTo, mintIds);
-            }
+            _ERC721(
+                _localNFT, 
+                _localTo, 
+                withdrawTotal, 
+                mintTotal, 
+                withdrawIds, 
+                mintIds
+            );
         }
 
         if(nftenum.ERC1155 == nftStandard) {
-            if(withdrawIds.length > 0){
-                INFTDeposit(localNFTDeposit).batchWithdrawERC1155(_localNFT, _localTo, withdrawIds, withdrawAmounts);
+            _ERC1155(
+                _localNFT, 
+                _localTo, 
+                withdrawTotal, 
+                mintTotal, 
+                withdrawIds, 
+                mintIds, 
+                withdrawAmounts, 
+                mintAmounts
+            );
+        }
+    }
+
+    function _finalizeDeposit(
+        address _localNFT, 
+        uint256[] calldata _tokenIds, 
+        uint256[] calldata _amounts
+    ) internal view returns (
+        uint256[] memory withdrawIds,
+        uint256[] memory withdrawAmounts,
+        uint256[] memory mintIds,
+        uint256[] memory mintAmounts,
+        uint256 withdrawTotal,
+        uint256 mintTotal
+    ){
+        withdrawIds = new uint256[](_tokenIds.length);
+        withdrawAmounts = new uint256[](_tokenIds.length);
+
+
+        mintIds = new uint256[](_tokenIds.length);
+        mintAmounts = new uint256[](_tokenIds.length);
+
+        for (uint256 index; index < _tokenIds.length; index++) {
+            if(isDeposit[_localNFT][_tokenIds[index]]) {
+                withdrawIds[index] = _tokenIds[index];
+                withdrawAmounts[index] = _amounts[index];
+                withdrawTotal += 1;
             }else{
-                IStandarERC1155(_localNFT).batchMint(_localTo, withdrawIds, withdrawAmounts, "");
+                mintIds[index] = _tokenIds[index];
+                mintAmounts[index] =  _amounts[index];
+                mintTotal += 1;
             }
+        }
+    }
+
+    function _ERC721(
+        address _localNFT, 
+        address _localTo, 
+        uint256 withdrawTotal, 
+        uint256 mintTotal, 
+        uint256[] memory withdrawIds, 
+        uint256[] memory mintIds
+    ) internal {
+        if(withdrawTotal > 0) {
+            emit EVENT_ERC721(_localNFT, withdrawIds, 1);
+            INFTDeposit(localNFTDeposit).batchWithdrawERC721(_localNFT, _localTo, withdrawIds);
+        }
+        if(mintTotal > 0){
+            emit EVENT_ERC721(_localTo, mintIds, 2);
+            IStandarERC721(_localNFT).batchMint(_localTo, mintIds);
+        }
+    }
+
+    function _ERC1155(
+        address _localNFT, 
+        address _localTo, 
+        uint256 withdrawTotal, 
+        uint256 mintTotal, 
+        uint256[] memory withdrawIds, 
+        uint256[] memory mintIds,
+        uint256[] memory withdrawAmounts,
+        uint256[] memory mintAmounts
+    ) internal {
+        if(withdrawTotal > 0){
+            INFTDeposit(localNFTDeposit).batchWithdrawERC1155(_localNFT, _localTo, withdrawIds, withdrawAmounts);
+        }
+        if(mintTotal > 0){
+            IStandarERC1155(_localNFT).batchMint(_localTo, mintIds, mintAmounts, "");
         }
     }
 

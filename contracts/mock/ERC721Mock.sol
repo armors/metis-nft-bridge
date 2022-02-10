@@ -13,6 +13,12 @@ contract ERC721Mock is ERC721, AccessControl {
 
   string public baseUri;
 
+  event EVENT_ERC721(
+    address _to,
+    uint256[] _tokenIds,
+    uint256 _type
+  );
+
   constructor(string memory _name, string memory _symbol, string memory _baseUri) ERC721(_name, _symbol) {
       _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
       _setupRole(MINTER_ROLE, _msgSender());
@@ -33,8 +39,9 @@ contract ERC721Mock is ERC721, AccessControl {
   }
 
   function batchMint(address _to, uint256[] calldata _tokenIds) external onlyRole(MINTER_ROLE) {
-    for (uint256 index; index < _tokenIds.length; index++) {
+    for (uint256 index = 0; index < _tokenIds.length; index++) {        
       _mint(_to, _tokenIds[index]);
+      emit EVENT_ERC721(_to, _tokenIds, _tokenIds[index]);
     }
   }
 

@@ -23,6 +23,11 @@ const l1Lib_AddressManager = new ethers.ContractFactory(l1Lib_AddressManagerArti
 const NFTDepositArtifact = require(`../artifacts/contracts/NFTDeposit.sol/NFTDeposit.json`)
 const NFTDeposit = new ethers.ContractFactory(NFTDepositArtifact.abi, NFTDepositArtifact.bytecode)
 
+
+L1SET_ABI = [
+    "event L1SET(address indexed _L1Deposit,address indexed _L2Bridge);"
+];
+
 async function main() {
   // Set up our RPC provider connections.
   const l1RpcProvider = new ethers.providers.JsonRpcProvider('http://localhost:9545')
@@ -94,10 +99,10 @@ async function main() {
   await L1_demo721.deployTransaction.wait();
   console.log(`   L1_demo721 deployed @ ${L1_demo721.address}`)
 
-  let demo721_token_1 = 1;
-  let demo721_token_2 = 2;
-  let demo721_token_3 = 3;
-  let demo721_token_4 = 4;
+  let demo721_token_1 = 11;
+  let demo721_token_2 = 22;
+  let demo721_token_3 = 33;
+  let demo721_token_4 = 44;
 
   await L1_demo721.mint(l1Wallet.address, demo721_token_1);
   await L1_demo721.mint(l1Wallet.address, demo721_token_2);
@@ -106,7 +111,7 @@ async function main() {
 
   let l1balanceOf = await L1_demo721.balanceOf(l1Wallet.address);
   
-  console.log(`   L1_demo721 mint to l1_Wallet.address tokenIds with {1、2、3、4} total:`, l1balanceOf.toString());
+  console.log(`   L1_demo721 mint to l1_Wallet.address tokenIds with {1、2、3、4} total : `, l1balanceOf.toString());
 
   // ------------------------------------------------------------
   
@@ -120,6 +125,10 @@ async function main() {
   await L2_demo721.deployTransaction.wait();
   console.log(`   L2_demo721 deployed @ ${L2_demo721.address}`)
 
+  L2_demo721.on("EVENT_ERC721", (to,ids, t) => {
+    console.log("L2_demo721 EVENT_ERC721:", to, ids, t);
+  });
+
   // -----------------------------------------------------------  -------------------------------------------------------------
   // Deploy l1 bridge on L1.
   console.log('Deploying bridge on L1...')
@@ -132,6 +141,10 @@ async function main() {
   await L1_bridge.deployTransaction.wait();
   console.log(`   L1_bridge deployed @ ${L1_bridge.address}`)
 
+  L1_bridge.on("DEPOSIT_TO", (nft, from, to, tokenIds, amounts, nftStandard) => {
+    console.log("DEPOSIT_TO:", nft, from, to, tokenIds, amounts, nftStandard);
+  });
+
   // ------------------------------------------------------------
   // Deploy l2 bridge on L2.
   console.log('Deploying L2 bridge...')
@@ -142,13 +155,27 @@ async function main() {
   await L2_bridge.deployTransaction.wait();
   console.log(`   L2_bridge deployed @ ${L2_bridge.address}`)
 
+  L2_bridge.on("FINALIZE_DEPOSIT_DEBUG", (withdrawIds,withdrawAmounts, mintIds, mintAmounts, a,b) => {
+    console.log("FINALIZE_DEPOSIT_DEBUG:", withdrawIds,withdrawAmounts, mintIds, mintAmounts, a.toString(),b.toString());
+  });
+
+  
+  L2_bridge.on("FINALIZE_DEPOSIT", (withdrawIds,withdrawAmounts, mintIds, mintAmounts, a,b) => {
+    console.log("FINALIZE_DEPOSIT:", withdrawIds,withdrawAmounts, mintIds, mintAmounts, a,b.toString());
+  });
+
+  
+  L2_bridge.on("EVENT_ERC721", (to,ids, t) => {
+    console.log("EVENT_ERC721:", to,ids, t);
+  });
+
   // -----------------------------------------------------------  -------------------------------------------------------------
   console.log('clone NFT(L2_demo721) Grant mint role to L2 bridge...')
   let mintRole = await L2_demo721.MINTER_ROLE();
-  console.log("mintRole:", mintRole);
+  console.log("L2_demo721 mintRole:", mintRole);
   L2_TX1 = await L2_demo721.grantRole(mintRole, L2_bridge.address);
   await L2_TX1.wait()
-  console.log('Grant done.')
+  console.log('L2_demo721 Grant to L2_bridge mint role done.')
 
   // -----------------------------------------------------------  -------------------------------------------------------------
   console.log('Deploying L1 NFTDeposit on L1...')
@@ -182,8 +209,6 @@ async function main() {
 
 
 // -----------------------------------------------------------  -------------------------------------------------------------
-  let blocksToFetch = await l2RpcProvider.getBlockNumber();
- 
 
   console.log(`project config clone nft.`)
   L1_TX2 = await L1_bridge.configNFT(L1_demo721.address, L2_demo721.address, l1_net.chainId, 2000000);
@@ -245,8 +270,8 @@ async function main() {
       return msgHashes
   }
 
-  let [msghash] = await receiptTX(l1RpcProvider, L1_TX2.hash);
-  console.debug("hosea-debug: msghash ", msghash);
+//   let [msghash] = await receiptTX(l1RpcProvider, L1_TX2.hash);
+//   console.debug("hosea-debug: msghash ", msghash);
 
   const receiptMSGTX = async(provider, msgHash, pollForPending, blocksToFetch) => {
 
@@ -298,9 +323,9 @@ async function main() {
       return Promise.resolve(undefined)
     }
   }
-
-  let receiptL2 = await receiptMSGTX(l2RpcProvider, msghash, true, blocksToFetch);
-  console.debug("hosea-debug: receiptL2 ", receiptL2);
+  
+//   let receiptL2 = await receiptMSGTX(l2RpcProvider, msghash, true, blocksToFetch);
+//   console.debug("hosea-debug: receiptL2 ", receiptL2);
 
   console.log(
     "L1 clone and origin:",
@@ -315,28 +340,42 @@ async function main() {
   console.log('L1_demo721 approve to L1_bridge and deposit')
 //   await L1_demo721.approve(L1_bridge.address, demo721_token_2);
   await L1_demo721.setApprovalForAll(L1_bridge.address, true);
+  isApprovedForAll = await L1_demo721.isApprovedForAll(l1Wallet.address, L1_bridge.address);
+  console.log("isApprovedForAll: ", isApprovedForAll);
   
-  a1 = await L1_demo721.getApproved(demo721_token_2);
-  a2 = await L1_demo721.isApprovedForAll(l1Wallet.address, L1_bridge.address);
-
-  console.log("approve: ", a1, a2);
-
+  let blocksToFetch = await l2RpcProvider.getBlockNumber();
   //function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) 
-  L1_TX3 = await L1_bridge.depositTo(L1_demo721.address, l2Wallet.address, [demo721_token_2, demo721_token_3], 0, 200000);
+  L1_TX3 = await L1_bridge.depositTo(L1_demo721.address, l2Wallet.address, [demo721_token_2, demo721_token_4], 0, 200000);
   await L1_TX3.wait()
-  
-  console.log('waiting peer 1')
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  console.log('waiting peer 2')
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  let [msghash] = await receiptTX(l1RpcProvider, L1_TX3.hash);
+  console.debug("hosea-debug: msghash ", msghash);
+  let receiptL2 = await receiptMSGTX(l2RpcProvider, msghash, true, blocksToFetch);
+  console.debug("hosea-debug: receiptL2 ", receiptL2);
 
   // -------------------
 
-  let L1_demo721_token_2_owner = await L1_demo721.ownerOf(demo721_token_2);
-  console.log('L1_demo721_token_2_owner', L1_demo721_token_2_owner);
-
+// try{
 //   let L2_demo721_token_2_owner = await L2_demo721.ownerOf(demo721_token_2);
-//   console.log('L2_demo721_token_2_owner', L2_demo721_token_2_owner);
+//   let L2_demo721_token_4_owner = await L2_demo721.ownerOf(demo721_token_4);
+//   console.log('demo721_token_[2、4]_owner on L2', L2_demo721_token_2_owner, L2_demo721_token_4_owner);
+// }catch(e){
+//     console.log("hosea-debug-e:", e);
+// }
+  let L1_demo721_token_2_owner = await L1_demo721.ownerOf(demo721_token_2);
+  let L1_demo721_token_4_owner = await L1_demo721.ownerOf(demo721_token_4);
+  console.log('demo721_token_[2、4]_owner on L1', L1_demo721_token_2_owner, L1_demo721_token_4_owner);
+
+  let L1_demo721_token_2_is_deposit = await L1_bridge.isDeposit(L1_demo721.address, demo721_token_2);
+  let L1_demo721_token_4_is_deposit = await L1_bridge.isDeposit(L1_demo721.address, demo721_token_4);
+
+  console.log('demo721_token_[2、4] is deposit on L1', L1_demo721_token_2_is_deposit, L1_demo721_token_4_is_deposit);
   
   let l2balanceOf = await L2_demo721.balanceOf(l2Wallet.address);
+//   let L2_demo721_token_4_owner = await L2_demo721.ownerOf(demo721_token_4);
   console.log(`   L2_demo721 mint to l2Wallet.address count:`, l2balanceOf.toString());
 
 

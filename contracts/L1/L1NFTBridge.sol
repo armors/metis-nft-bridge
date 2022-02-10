@@ -15,11 +15,43 @@ import { CrossDomainEnabled } from "../gateway/CrossDomainEnabled.sol";
 import { INFTBridge } from "../INFTBridge.sol";
 import { INFTDeposit } from "../INFTDeposit.sol";
 
-import { console } from "../console.sol";
-
 contract L1NFTBridge is AccessControl, CrossDomainEnabled {
     
+    event EVENT_SET(
+        address indexed _deposit,
+        address indexed _bridge
+    );
+
+    event CONFIT_NFT(
+        address indexed _localNFT,
+        address indexed _destNFT,
+        uint256 _chainID
+    );
     
+    event DEPOSIT_TO(
+        address _nft,
+        address _from,
+        address _to,
+        uint256[] _tokenIds,
+        uint256[] _amounts,
+        uint8 nftStandard
+    );
+    
+    event FINALIZE_DEPOSIT(
+        address _nft,
+        address _from,
+        address _to,
+        uint256[] _tokenIds,
+        uint256[] _amounts,
+        uint8 nftStandard
+    );
+
+    event FINALIZE_DEPOSIT_DEBUG(
+        uint256[] a,
+        uint256[] b,
+        uint256[] c,
+        uint256[] d
+    );
 
     // configNFT role
     bytes32 public constant NFT_FACTORY_ROLE = keccak256("NFT_FACTORY_ROLE");
@@ -90,6 +122,8 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
     function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE){
         localNFTDeposit = _localNFTDeposit;
         destNFTBridge = _destNFTBridge;
+
+        emit EVENT_SET(localNFTDeposit, destNFTBridge);
     }
     
     /** factory role config nft clone
@@ -125,7 +159,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
             msg.value
         );
 
-        console.log("console: %s %s %s %s", localNFT, destNFT, originNFTChainId);
+        emit CONFIT_NFT(localNFT, destNFT, originNFTChainId);
     }
 
     /** batch transfer 721 token
@@ -152,14 +186,15 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
        
         require(clone[localNFT] != address(0), "Config NFT cross-domain first.");
 
-        uint256[] memory amounts;
-        
+        uint256[] memory amounts = new uint256[](tokenIds.length);
+
         if(nftenum.ERC721 == nftStandard) {
             
             ERC721BatchTransfer(localNFT, localNFTDeposit, tokenIds);
             
             for (uint256 index; index < tokenIds.length; index++) {
                 isDeposit[localNFT][tokenIds[index]] = true;
+                amounts[index] = 1;
             }
         }
        
@@ -175,6 +210,8 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
             IERC1155(localNFT).safeBatchTransferFrom(msg.sender, localNFTDeposit, tokenIds, amounts, "");
         }
     
+        require(amounts.length == tokenIds.length, "Array lengths do not match.");
+
         address destNFT = clone[localNFT];
 
         bytes memory message =  abi.encodeWithSelector(
@@ -187,6 +224,8 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
             uint8(nftStandard)
         );
         
+        emit DEPOSIT_TO(destNFT, msg.sender, destTo, tokenIds, amounts, uint8(nftStandard));
+
         sendCrossDomainMessageViaChainId(
             DEST_CHAINID,
             destNFTBridge,
@@ -194,6 +233,7 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
             message,
             msg.value
         );
+
     }
 
     /** clone nft
@@ -226,6 +266,10 @@ contract L1NFTBridge is AccessControl, CrossDomainEnabled {
                 mintAmounts[index] = _amounts[index];
             }
         }
+
+        emit FINALIZE_DEPOSIT_DEBUG(withdrawIds,withdrawAmounts, mintIds, mintAmounts);
+
+        emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, _tokenIds, _amounts, uint8(nftStandard));
 
         if(nftenum.ERC721 == nftStandard) {
             if(withdrawIds.length > 0){
