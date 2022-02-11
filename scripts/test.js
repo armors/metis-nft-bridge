@@ -393,26 +393,26 @@ async function deployBridge(L1BridgeOwner, L2BridgeOwner, L1Factory, L1LibAddres
 }
 
 // L2 为 克隆合约
-async function mockDeployERC721(L1Wallet, L2Wallet, presetTokenIds, L2Bridge){
+async function mockDeployERC721(originWallet, destWallet, presetTokenIds, destBridge){
     // L1
-    const L1Mock = await demo721.connect(L1Wallet).deploy("L1 name", "L1 symbol", "ipfs://erc721.io/L1/");
+    const L1Mock = await demo721.connect(originWallet).deploy("L1 name", "L1 symbol", "ipfs://erc721.io/L1/");
     await L1Mock.deployTransaction.wait();
     console.log(`\n  mockERC721 deployed on L1 @ ${L1Mock.address}`)
     
     // L2
-    const L2Mock = await demo721.connect(L2Wallet).deploy("L1 name to L2", "L1 symbol to L2", "ipfs://erc721.io/L1/to/L2/");
+    const L2Mock = await demo721.connect(destWallet).deploy("L1 name to L2", "L1 symbol to L2", "ipfs://erc721.io/L1/to/L2/");
     await L2Mock.deployTransaction.wait();
     console.log(`\n  mockERC721 deployed on L2 @ ${L2Mock.address}`)
 
     // grant role
     let mintRole = await L2Mock.MINTER_ROLE();
-    L2MockGrant = await L2Mock.grantRole(mintRole, L2Bridge.address);
+    L2MockGrant = await L2Mock.grantRole(mintRole, destBridge.address);
     await L2MockGrant.wait()
     console.log('\n  Grant [mint role] to bridge on L2 done.')
     
     // L1 mint token
     for(let index = 0; index < presetTokenIds.length; index++) {
-        await L1Mock.mint(L1Wallet.address, presetTokenIds[index]);
+        await L1Mock.mint(originWallet.address, presetTokenIds[index]);
     }
 
     console.log(`\n  mockERC721 mint tokens{ ${presetTokenIds} } on L1`)
@@ -427,26 +427,26 @@ async function mockDeployERC721(L1Wallet, L2Wallet, presetTokenIds, L2Bridge){
     }
 }
 
-async function mockDeployERC1155(L1Wallet, L2Wallet, presetTokenIds, L2Bridge){
+async function mockDeployERC1155(originWallet, destWallet, presetTokenIds, destBridge){
     // L1
-    const L1Mock = await demo1155.connect(L1Wallet).deploy("ipfs://erc1155.io/L1/");
+    const L1Mock = await demo1155.connect(originWallet).deploy("ipfs://erc1155.io/L1/");
     await L1Mock.deployTransaction.wait();
     console.log(`\n  mockERC1155 deployed on L1 @ ${L1Mock.address}`)
     
     // L2
-    const L2Mock = await demo1155.connect(L2Wallet).deploy("ipfs://erc1155.io/L1/to/L2/");
+    const L2Mock = await demo1155.connect(destWallet).deploy("ipfs://erc1155.io/L1/to/L2/");
     await L2Mock.deployTransaction.wait();
     console.log(`\n  mockERC1155 deployed on L2 @ ${L2Mock.address}`)
 
     // grant role
     let mintRole = await L2Mock.MINTER_ROLE();
-    L2MockGrant = await L2Mock.grantRole(mintRole, L2Bridge.address);
+    L2MockGrant = await L2Mock.grantRole(mintRole, destBridge.address);
     await L2MockGrant.wait()
     console.log('\n  Grant [mint role] to bridge on L2 done.')
     
     // L1 mint token
     for(let index = 0; index < presetTokenIds.length; index++) {
-        await L1Mock.mint(L1Wallet.address, presetTokenIds[index], 1, [])
+        await L1Mock.mint(originWallet.address, presetTokenIds[index], 1, [])
     }
 
     console.log(`\n  mockERC1155 mint tokens{ ${presetTokenIds} } on L1`)
