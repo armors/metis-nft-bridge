@@ -22,6 +22,9 @@ import { INFTDeposit } from "../INFTDeposit.sol";
 
 contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     
+    // rollback
+    bytes32 public constant ROLLBACK_ROLE = keccak256("ROLLBACK_ROLE");
+
     // L1 bridge
     address public destNFTBridge;
     
@@ -55,13 +58,17 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     // L2 nft => L2 nft id => is deposited
     mapping(address => mapping( uint256 => bool )) public isDeposit;
     
+    // L2 nft => L2 nft id => deposit user
+    mapping(address => mapping( uint256 => address )) public depositUser;
+
     modifier onlyEOA() {
         require(!Address.isContract(msg.sender), "Account not EOA");
         _;
     }
 
-    constructor(address _owner, address _localMessenger) CrossDomainEnabled(_localMessenger) {
+    constructor(address _owner, address _rollback, address _localMessenger) CrossDomainEnabled(_localMessenger) {
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
+        _setupRole(ROLLBACK_ROLE, _rollback);
     }
 
     /**
@@ -115,6 +122,10 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external payable onlyEOA() {
        
+       require(clone[localNFT] != address(0), "NFT not config.");
+
+       require(isDeposit[localNFT][id] == false, "Don't repeat deposit.");
+
        require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
 
        uint256 amount = 0;
@@ -128,8 +139,8 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
             IERC1155(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id, amount, "");
        }
        
-       isDeposit[localNFT][id] = true;
-    
+       _depositStatus(localNFT, id, msg.sender, true);
+
        address destNFT = clone[localNFT];
 
        _messenger(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
@@ -137,6 +148,10 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
        emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
 
+    function _depositStatus(address _nft, uint256 _id, address _user, bool _isDeposit) internal {
+       isDeposit[_nft][_id] = _isDeposit;
+       depositUser[_nft][_id] = _user;
+    }
 
     /** deposit messenger
      * 
@@ -183,7 +198,12 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
             if(isDeposit[_localNFT][id]){
                 INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _localTo, id);
             }else{
-                IStandarERC721(_localNFT).mint(_localTo, id);
+                if(isOrigin[_localNFT]){
+                    // What happened
+                    emit DEPOSIT_FAILED(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
+                }else{
+                    IStandarERC721(_localNFT).mint(_localTo, id);
+                }
             }
         }
 
@@ -191,9 +211,16 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
             if(isDeposit[_localNFT][id]){
                 INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, _localTo, id, _amount);
             }else{
-                IStandarERC1155(_localNFT).mint(_localTo, id, _amount, "");
+                 if(isOrigin[_localNFT]){
+                    // What happened
+                    emit DEPOSIT_FAILED(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
+                }else{
+                    IStandarERC1155(_localNFT).mint(_localTo, id, _amount, "");
+                }
             }
         }
+
+        _depositStatus(_localNFT, id, address(0), false);
 
         emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
     }
@@ -220,4 +247,30 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
         return string(bstr);
     }
 
+    /** hack rollback
+     * 
+     * @param nftStandard nft type
+     * @param _localNFT nft
+     * @param ids tokenid
+     */
+    function rollback(nftenum nftStandard, address _localNFT, uint256[] memory ids) public onlyRole(ROLLBACK_ROLE) {
+        
+        for( uint256 index; index < ids.length; index++ ){
+            
+            uint256 id = ids[index];
+
+            require(isDeposit[_localNFT][id], "Not Deposited");
+            
+            require(depositUser[_localNFT][id] != address(0), "user can not be zero address.");
+            
+            if(nftenum.ERC721 == nftStandard) {
+                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, depositUser[_localNFT][id], id);
+            }else{
+                uint256 amount = IERC1155(_localNFT).balanceOf(msg.sender, id);
+                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, depositUser[_localNFT][id], id, amount);
+            }
+    
+            _depositStatus(_localNFT, id, address(0), false);
+        }
+    }
 }

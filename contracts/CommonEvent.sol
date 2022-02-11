@@ -34,4 +34,13 @@ interface CommonEvent {
         uint256 _amount,
         uint8 nftStandard
     );
+
+    event DEPOSIT_FAILED(
+        address _nft,
+        address _from,
+        address _to,
+        uint256 _tokenID,
+        uint256 _amount,
+        uint8 nftStandard
+    );
 }
