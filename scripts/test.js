@@ -392,7 +392,6 @@ async function deployBridge(L1BridgeOwner, L2BridgeOwner, L1Factory, L1LibAddres
     }
 }
 
-// L2 为 克隆合约
 async function mockDeployERC721(originWallet, destWallet, presetTokenIds, destBridge){
     // L1
     const L1Mock = await demo721.connect(originWallet).deploy("L1 name", "L1 symbol", "ipfs://erc721.io/L1/");
@@ -595,6 +594,7 @@ async function init(config, nftStandard) {
 
     let bridges = await deployBridge(wallets.L1.owner, wallets.L2.owner, wallets.L1.fac, crossDomain.L1LibAddressManager, messengers.L1.address, messengers.L2.address);
     
+    // param second 为 clone contract
     let mock;
     if( nftStandard == config.nftStandard.ERC721) {
         mock = await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
