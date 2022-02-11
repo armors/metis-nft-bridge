@@ -19,6 +19,9 @@ import { CommonEvent } from "../CommonEvent.sol";
 
 import { INFTDeposit } from "../INFTDeposit.sol";
 
+import { iMVM_DiscountOracle } from "../gateway/iMVM_DiscountOracle.sol";
+import { Lib_AddressManager } from "../gateway/Lib_AddressManager.sol";
+
 contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
 
     // L1 configNFT role
@@ -30,9 +33,12 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     // L1 deposit
     address public localNFTDeposit;
     
-    // L1 pre deploy
+    // L1 preset address manager
     address public addressManager;
     
+    // L1 preset oracle
+    iMVM_DiscountOracle public oracle;
+
     // L2 chainid
     uint256 constant public DEST_CHAINID = 1088;
     
@@ -64,11 +70,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         require(!Address.isContract(msg.sender), "Account not EOA");
         _;
     }
-    // TODO 
-    modifier requireDestGas(uint256 destGas){
-        _;
-    }
-
+    
     /**
      *  @param _owner admin role
      *  @param _nftFactory factory role
@@ -79,6 +81,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(NFT_FACTORY_ROLE, _nftFactory);
         addressManager = _addressManager;
+        oracle = iMVM_DiscountOracle(Lib_AddressManager(addressManager).getAddress('MVM_DiscountOracle'));
     }
     
     /** config 
@@ -101,15 +104,22 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param localNFT nft on this chain
      * @param destNFT nft on L2
      * @param originNFTChainId origin NFT ChainId 
-     * @param destGas L2 gas
+     * @param destGasLimit L2 gas
      */
-    function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGas) external payable onlyRole(NFT_FACTORY_ROLE) requireDestGas(destGas) {
+    function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGasLimit) external payable onlyRole(NFT_FACTORY_ROLE) {
 
         uint256 localChainId = getChainID();
     
         require((originNFTChainId == DEST_CHAINID || originNFTChainId == localChainId), "ChainId not supported");
 
         require(clone[localNFT] == address(0), "NFT already configured.");
+
+        uint32 minGasLimit = uint32(oracle.getMinL2Gas());
+        if (destGasLimit < minGasLimit) {
+            destGasLimit = minGasLimit;
+        }
+        // TODO
+        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
 
         clone[localNFT] = destNFT;
 
@@ -128,7 +138,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         sendCrossDomainMessageViaChainId(
             DEST_CHAINID,
             destNFTBridge,
-            destGas,
+            destGasLimit,
             message,
             msg.value
         );
@@ -142,11 +152,18 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param destTo owns nft on L2
      * @param id nft id  
      * @param nftStandard nft type
-     * @param destGas L2 gas
+     * @param destGasLimit L2 gas limit
      */
-    function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external onlyEOA() requireDestGas(destGas) {
+    function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGasLimit) external onlyEOA() payable {
        
-       uint256 amount = 0;
+        uint32 minGasLimit = uint32(oracle.getMinL2Gas());
+        if (destGasLimit < minGasLimit) {
+            destGasLimit = minGasLimit;
+        }
+        // TODO
+        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
+        
+        uint256 amount = 0;
        
        if(nftenum.ERC721 == nftStandard) {
             IERC721(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id);
@@ -161,7 +178,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     
        address destNFT = clone[localNFT];
 
-       _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
+       _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
 
         emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
@@ -175,9 +192,9 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param id nft id  
      * @param amount amount
      * @param nftStandard nft type
-     * @param destGas L2 gas
+     * @param destGasLimit L2 gas
      */
-    function _messenger(uint256 chainId, address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGas) internal {
+    function _messenger(uint256 chainId, address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGasLimit) internal {
 
         bytes memory message =  abi.encodeWithSelector(
             ICrollDomain.finalizeDeposit.selector,
@@ -192,7 +209,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         sendCrossDomainMessageViaChainId(
             chainId,
             destNFTBridge,
-            destGas,
+            destGasLimit,
             message,
             msg.value
         );
@@ -211,10 +228,9 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         
         if(nftenum.ERC721 == nftStandard) {
             if(isDeposit[_localNFT][id]){
-                emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
                 INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _localTo, id);
             }else{
-                // IStandarERC721(_localNFT).mint(_localTo, id);
+                IStandarERC721(_localNFT).mint(_localTo, id);
             }
         }
 
@@ -225,6 +241,28 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
                 IStandarERC1155(_localNFT).mint(_localTo, id, _amount, "");
             }
         }
-        // emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
+        emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
+    }
+
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 }

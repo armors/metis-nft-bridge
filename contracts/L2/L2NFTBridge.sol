@@ -12,6 +12,8 @@ import { IStandarERC1155 } from "../IStandarERC1155.sol";
 
 import { CrossDomainEnabled } from "../gateway/CrossDomainEnabled.sol";
 
+import { Lib_PredeployAddresses } from "../gateway/Lib_PredeployAddresses.sol";
+
 import { ICrollDomain } from "../ICrollDomain.sol";
 
 import { CommonEvent } from "../CommonEvent.sol";
@@ -25,6 +27,9 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     
     // L2 nft deposit
     address public localNFTDeposit;
+
+    // L1 min gas
+    uint256 public minL1Gas;
 
     // get current chainid
     function getChainID() internal view returns (uint256) {
@@ -55,13 +60,16 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
         _;
     }
 
-    // TODO 
-    modifier requireDestGas(uint256 destGas){
-        _;
-    }
-
     constructor(address _owner, address _localMessenger) CrossDomainEnabled(_localMessenger) {
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
+    }
+
+    /**
+     * Allows the owner to modify the l1 bridge price.
+     * @param _minL1Gas l1 min gas 
+     */
+    function setMinL1Gas(uint256 _minL1Gas) public onlyRole(DEFAULT_ADMIN_ROLE){
+        minL1Gas = _minL1Gas;
     }
 
     /** config 
@@ -105,8 +113,10 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      * @param nftStandard nft type
      * @param destGas L1 gas
      */
-    function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external onlyEOA() requireDestGas(destGas) {
+    function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external payable onlyEOA() {
        
+       require (msg.value >= minL1Gas || msg.sender == Lib_PredeployAddresses.SEQUENCER_FEE_WALLET, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
+
        uint256 amount = 0;
        
        if(nftenum.ERC721 == nftStandard) {
@@ -186,6 +196,28 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
         }
 
         emit FINALIZE_DEPOSIT(_localNFT, _destFrom, _localTo, id, _amount, uint8(nftStandard));
+    }
+
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 
 }

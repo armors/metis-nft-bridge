@@ -41,12 +41,12 @@ const config = {
         L2: 30000000
     },
     gas:{
-        L1: 20000000,
-        L2: 2000000,
+        L1: 3_200_000,
+        L2: 3_200_000,
     },
     wait:{
         v1: 3000,
-        v2: 5000,
+        v2: 10000,
     },
     nftStandard: {
         ERC721: 0,
@@ -433,6 +433,7 @@ async function deployBridgeConfig(L1Bridge, L2Bridge, L1Deposit, L2Deposit, L1Mo
     console.log(`\n  set done.`) 
   
     console.log(`\n  project config clone nft.`)
+    // {gasLimit: 3200000000000000}
     L1_TX2 = await L1Bridge.connect(L1Factory).configNFT(L1Mock721.address, L2Mock721.address, L1ChainId, L2Gas);
     await L1_TX2.wait()
     console.log('\n  waiting peer L1 => L2 configNFT ')
@@ -483,7 +484,7 @@ async function DepositL2ToL1(L2Bridge, L1Mock721, L2Mock721, L2Mock721Wallet, to
     await L2_TX1.wait()
     
     console.log('\n  waiting peer L2 => L1 depositTo { L2 bob => L1 jno } ')
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, wait));
     
     await check(L1Mock721, L2Mock721, tokenID, L2Mock721Wallet, destTo);
 }
@@ -509,7 +510,6 @@ async function init(config) {
     // Set up our RPC provider connections.
     const l1RpcProvider = new ethers.providers.JsonRpcProvider(config.rpc.L1)
     const l2RpcProvider = new ethers.providers.JsonRpcProvider(config.rpc.L2)
-
 
     // var
     let tenETH = ethers.utils.parseEther("10")
