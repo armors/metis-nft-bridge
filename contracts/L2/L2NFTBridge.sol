@@ -124,7 +124,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
        
        require(clone[localNFT] != address(0), "NFT not config.");
 
-       require(isDeposit[localNFT][id] == false, "Don't repeat deposit.");
+       require(isDeposit[localNFT][id] == false, "Don't redeposit.");
 
        require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
 
