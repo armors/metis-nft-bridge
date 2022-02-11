@@ -115,7 +115,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external payable onlyEOA() {
        
-       require (msg.value >= minL1Gas || msg.sender == Lib_PredeployAddresses.SEQUENCER_FEE_WALLET, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
+       require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
 
        uint256 amount = 0;
        
