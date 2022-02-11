@@ -165,7 +165,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
        require(clone[localNFT] != address(0), "NFT not config.");
 
        require(isDeposit[localNFT][id] == false, "Don't redeposit.");
-       
+
         uint32 minGasLimit = uint32(oracle.getMinL2Gas());
         if (destGasLimit < minGasLimit) {
             destGasLimit = minGasLimit;
@@ -197,6 +197,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
        isDeposit[_nft][_id] = _isDeposit;
        depositUser[_nft][_id] = _user;
     }
+    
     /** deposit messenger
      * 
      * @param chainId L2 chainId

@@ -1,7 +1,7 @@
 async function main() {
     // We get the contract to deploy
-    const Greeter = await ethers.getContractFactory("Greeter");
-    const greeter = await Greeter.deploy("Hello, Hardhat!");
+    const ERC721Mock = await ethers.getContractFactory("ERC721Mock");
+    const greeter = await ERC721Mock.deploy("Hello, Hardhat!");
   
     console.log("Greeter deployed to:", greeter.address);
   }
