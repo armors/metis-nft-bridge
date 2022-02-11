@@ -594,7 +594,7 @@ async function init(config, nftStandard) {
 
     let bridges = await deployBridge(wallets.L1.owner, wallets.L2.owner, wallets.L1.fac, crossDomain.L1LibAddressManager, messengers.L1.address, messengers.L2.address);
     
-    // param second 为 clone contract
+    // param second is clone contract
     let mock;
     if( nftStandard == config.nftStandard.ERC721) {
         mock = await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
