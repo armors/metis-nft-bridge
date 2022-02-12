@@ -5,7 +5,11 @@
     "scripts": {
         "clean": "rimraf ./cache && rimraf ./artifacts",
         "compile": "yarn clean && npx hardhat compile && npx hardhat --network metis-local compile",
-        "test": "npx hardhat test"
+        "test": "npx hardhat test",
+        "merge-bridge-L1": "sol-merger \"./contracts/L1/L1NFTBridge.sol\" ./build",
+        "merge-bridge-L2": "sol-merger \"./contracts/L2/L2NFTBridge.sol\" ./build",
+        "merge-deposit": "sol-merger \"./contracts/NFTDeposit.sol\" ./build",
+        "merge": "npm run merge-bridge-L1 && npm run merge-bridge-L2 && npm run merge-deposit"
     },
     "keywords": [],
     "author": "",
