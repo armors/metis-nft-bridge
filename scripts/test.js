@@ -351,6 +351,9 @@ async function deployBridge(L1BridgeOwner, L2BridgeOwner, L1Factory, L1LibAddres
         L1BridgeOwner.address, // owner
         L1Bridge.address // withdraw
     )
+    await L1Deposit.deployTransaction.wait();
+    console.log(`\n  bridge deposit deployed on L1 @ ${L1Deposit.address}`)
+
 
     // L2 bridge
     const L2Bridge = await L2NFTBridge.connect(L2BridgeOwner).deploy(
@@ -358,19 +361,14 @@ async function deployBridge(L1BridgeOwner, L2BridgeOwner, L1Factory, L1LibAddres
         L2BridgeOwner.address, //rollback
         L2MessengerAddress
     )
-    
     await L2Bridge.deployTransaction.wait();
     console.log(`\n  bridge deployed on L2 @ ${L2Bridge.address}`)
-
-    await L1Deposit.deployTransaction.wait();
-    console.log(`\n  bridge deposit deployed on L1 @ ${L1Deposit.address}`)
 
     // L2 deposit
     const L2Deposit = await NFTDeposit.connect(L2BridgeOwner).deploy(
         L2BridgeOwner.address, // owner
         L2Bridge.address // withdraw
     ) 
-
     await L2Deposit.deployTransaction.wait();
     console.log(`\n  bridge deposit deployed on L2 @ ${L2Deposit.address}`)
     
