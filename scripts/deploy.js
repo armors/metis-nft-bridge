@@ -34,7 +34,7 @@ const rinkey = {
         },
         L2: "https://stardust.metis.io/?owner=588"
     },
-    own: '0x98006cf7704f05ee3ffa5f524a79861fa92ca8319963050967b7fa87647a50db',
+    own: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
 
     gasLimit: {
         L1: 30000000,
