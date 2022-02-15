@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
 /**
  * @dev Interface of the ERC165 standard, as defined in the
@@ -24,7 +25,7 @@ interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721.sol)
 /**
  * @dev Required interface of an ERC721 compliant contract.
@@ -163,7 +164,7 @@ interface IERC721 is IERC165 {
     ) external;
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/IERC1155.sol)
 /**
  * @dev Required interface of an ERC1155 compliant contract, as defined in the
@@ -284,7 +285,7 @@ interface IERC1155 is IERC165 {
     ) external;
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721Receiver.sol)
 /**
  * @title ERC721 token receiver interface
@@ -309,7 +310,7 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/IERC1155Receiver.sol)
 /**
  * @dev _Available since v3.1._
@@ -358,7 +359,7 @@ interface IERC1155Receiver is IERC165 {
     ) external returns (bytes4);
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 /**
  * @dev Implementation of the {IERC165} interface.
@@ -383,7 +384,7 @@ abstract contract ERC165 is IERC165 {
     }
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/utils/ERC1155Receiver.sol)
 /**
  * @dev _Available since v3.1._
@@ -607,7 +608,7 @@ library Address {
     }
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
 /**
  * @dev External interface of AccessControl declared to support ERC165 detection.
@@ -693,7 +694,7 @@ interface IAccessControl {
     function renounceRole(bytes32 role, address account) external;
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 /**
  * @dev Provides information about the current execution context, including the
@@ -715,7 +716,7 @@ abstract contract Context {
     }
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 /**
  * @dev String operations.
@@ -780,7 +781,7 @@ library Strings {
     }
 }
 
-// SPDX-License-Identifier: MIT
+// 
 // OpenZeppelin Contracts v4.4.1 (access/AccessControl.sol)
 /**
  * @dev Contract module that allows children to implement role-based access
@@ -996,7 +997,7 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
     }
 }
 
-// SPDX-License-Identifier: MIT
+// 
 contract NFTDeposit is IERC721Receiver, ERC1155Receiver, AccessControl {
     
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
