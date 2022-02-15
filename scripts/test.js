@@ -441,13 +441,13 @@ async function mockDeployERC721(originWallet, destWallet, presetTokenIds, destBr
     console.log(`\n  ${L2Mock2.address} mint tokens{ ${balance} } to ${originWallet.address}`)
 
     // return 
-    // accounts[L1Mock.address] = "L1 ERC721 Contract";
-    // accounts[L2Mock.address] = "L2 ERC721 Contract";
+    accounts[L1Mock.address] = "L1 ERC721 Contract";
+    accounts[L2Mock.address] = "L2 ERC721 Contract";
 
-    // return {
-    //     L1: L1Mock,
-    //     L2: L2Mock
-    // }
+    return {
+        L1: L1Mock,
+        L2: L2Mock
+    }
 }
 
 async function mockDeployERC1155(originWallet, destWallet, presetTokenIds, destBridge){
@@ -472,13 +472,13 @@ async function mockDeployERC1155(originWallet, destWallet, presetTokenIds, destB
     console.log(`\n  ${L1Mock.address} mint tokens{ ${balance} } to ${originWallet.address}`)
     console.log(`\n  ${L2Mock.address} mint tokens{ ${balance} } to ${originWallet.address}`)
     // return 
-    // accounts[L1Mock.address] = "L1 ERC1155 Contract";
-    // accounts[L2Mock.address] = "L2 ERC1155 Contract";
+    accounts[L1Mock.address] = "L1 ERC1155 Contract";
+    accounts[L2Mock.address] = "L2 ERC1155 Contract";
 
-    // return {
-    //     L1: L1Mock,
-    //     L2: L2Mock
-    // }
+    return {
+        L1: L1Mock,
+        L2: L2Mock
+    }
 }
 
 async function deployBridgeConfig(L1Bridge, L2Bridge, L1Deposit, L2Deposit, L1Mock, L2Mock, L1ChainId, L2Gas, wait, L1Factory){
