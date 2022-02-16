@@ -356,17 +356,17 @@ async function init(config, env) {
 
     await bridgeSet(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit);
     
-    let presetTokenIds = [1, 2, 3, 4, 5];
+    // let presetTokenIds = [1, 2, 3, 4, 5];
 
-    mock = await mockDeployERC721(wallets.L1.owner, wallets.L2.owner, presetTokenIds, bridges.L2.bridge);
+    // mock = await mockDeployERC721(wallets.L1.owner, wallets.L2.owner, presetTokenIds, bridges.L2.bridge);
 
     // await NFTConfig(bridges.L1.bridge, bridges.L2.bridge, mock.L1, mock.L2, ChainIDs.L1, config.gas.L2, config.wait.v1, wallets.L1.owner);
 }
 
 async function main() {
     try{
-        // let env = "rinkey";
-        let env = "dev";
+        let env = "rinkey";
+        // let env = "dev";
         let config = configENV[env];
         await init(config, env);
     }catch(e){
