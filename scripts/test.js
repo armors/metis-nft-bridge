@@ -622,6 +622,14 @@ async function init(config) {
     console.log(`\n  bridgeFactoryL2 deployed on L2 @ ${bridgeFactoryL2.address}`)
 
     let bridges = await deployBridge(wallets.L1.owner, wallets.L2.owner, bridgeFactoryL1, crossDomain.L1LibAddressManager, messengers.L1.address, messengers.L2.address);
+    
+    console.log(`\n  call set on L1 and L2`)
+    L1_TX1 = await bridges.L1.bridge.set(bridges.L1.deposit.address,bridges.L2.bridge.address);
+    await L1_TX1.wait()
+    L2_TX1 = await bridges.L2.bridge.set(bridges.L2.deposit.address, bridges.L1.bridge.address);
+    await L2_TX1.wait()
+    console.log(`\n  set done.`)
+    
     await bridgeFactoryL1.setbridge(bridges.L1.bridge.address)
     await bridgeFactoryL2.setbridge(bridges.L2.bridge.address)
     // param second is clone contract
