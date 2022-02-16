@@ -171,7 +171,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
             destGasLimit = minGasLimit;
         }
         // TODO
-        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
+        require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
         
         uint256 amount = 0;
        
