@@ -110,7 +110,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param localNFT nft on this chain
      * @param destNFT nft on L2
      * @param originNFTChainId origin NFT ChainId 
-     * @param destGasLimit L2 gas
+     * @param destGasLimit L2 gas limit
      */
     function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGasLimit) external payable onlyRole(NFT_FACTORY_ROLE) {
 
@@ -124,8 +124,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         if (destGasLimit < minGasLimit) {
             destGasLimit = minGasLimit;
         }
-        // TODO
-        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
+        require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
 
         clone[localNFT] = destNFT;
 
@@ -170,8 +169,8 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         if (destGasLimit < minGasLimit) {
             destGasLimit = minGasLimit;
         }
-        // TODO
-        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
+        
+        require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
         
         uint256 amount = 0;
        
@@ -207,7 +206,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param id nft id  
      * @param amount amount
      * @param nftStandard nft type
-     * @param destGasLimit L2 gas
+     * @param destGasLimit L2 gas limit
      */
     function _messenger(uint256 chainId, address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGasLimit) internal {
 

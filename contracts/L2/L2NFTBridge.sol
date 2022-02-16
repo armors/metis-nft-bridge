@@ -84,7 +84,7 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      * @param _localNFTDeposit L2 deposit
      * @param _destNFTBridge L1 bridge
      */
-    function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE) {
         
         require(destNFTBridge == address(0), "Already configured.");
 
