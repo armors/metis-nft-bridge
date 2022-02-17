@@ -161,9 +161,9 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGasLimit) external onlyEOA() payable {
        
-       require(clone[localNFT] != address(0), "NFT not config.");
+        require(clone[localNFT] != address(0), "NFT not config.");
 
-       require(isDeposit[localNFT][id] == false, "Don't redeposit.");
+        require(isDeposit[localNFT][id] == false, "Don't redeposit.");
 
         uint32 minGasLimit = uint32(oracle.getMinL2Gas());
         if (destGasLimit < minGasLimit) {
@@ -174,21 +174,21 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         
         uint256 amount = 0;
        
-       if(nftenum.ERC721 == nftStandard) {
+        if(nftenum.ERC721 == nftStandard) {
             IERC721(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id);
-       }
+        }
        
-       if(nftenum.ERC1155 == nftStandard) {
+        if(nftenum.ERC1155 == nftStandard) {
             amount = IERC1155(localNFT).balanceOf(msg.sender, id);
             require(amount == 1, "Not an NFT token.");
             IERC1155(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id, amount, "");
-       }
+        }
        
-      _depositStatus(localNFT, id, msg.sender, true);
+        _depositStatus(localNFT, id, msg.sender, true);
     
-       address destNFT = clone[localNFT];
+        address destNFT = clone[localNFT];
 
-       _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
+        _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
 
         emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
