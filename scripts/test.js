@@ -408,13 +408,13 @@ async function mockDeployERC721(originWallet, destWallet, presetTokenIds, destBr
     await L1Mock.deployTransaction.wait();
     console.log(`\n  L1 721Nft1 deployed on L1 @ ${L1Mock.address}`)
 
-    const L1Mock1 = await demo721.connect(originWallet).deploy("L1 721Nft2", "L1 721Nft2", "ipfs://erc721.io/L1/");
-    await L1Mock1.deployTransaction.wait();
-    console.log(`\n  L1 721Nft2 deployed on L1 @ ${L1Mock1.address}`)
+    // const L1Mock1 = await demo721.connect(originWallet).deploy("L1 721Nft2", "L1 721Nft2", "ipfs://erc721.io/L1/");
+    // await L1Mock1.deployTransaction.wait();
+    // console.log(`\n  L1 721Nft2 deployed on L1 @ ${L1Mock1.address}`)
 
-    const L1Mock2 = await demo721.connect(originWallet).deploy("L1 721Nft3", "L1 721Nft3", "ipfs://erc721.io/L1/");
-    await L1Mock2.deployTransaction.wait();
-    console.log(`\n  L1 721Nft3 deployed on L1 @ ${L1Mock2.address}`)
+    // const L1Mock2 = await demo721.connect(originWallet).deploy("L1 721Nft3", "L1 721Nft3", "ipfs://erc721.io/L1/");
+    // await L1Mock2.deployTransaction.wait();
+    // console.log(`\n  L1 721Nft3 deployed on L1 @ ${L1Mock2.address}`)
 
 
     
@@ -423,31 +423,31 @@ async function mockDeployERC721(originWallet, destWallet, presetTokenIds, destBr
     await L2Mock.deployTransaction.wait();
     console.log(`\n  L2 721Nft1 deployed on L2 @ ${L2Mock.address}`)
 
-    const L2Mock1 = await demo721.connect(destWallet).deploy("L2 721Nft2", "L2 721Nft2", "ipfs://erc721.io/L1/to/L2/");
-    await L2Mock1.deployTransaction.wait();
-    console.log(`\n  L2 721Nft2 deployed on L2 @ ${L2Mock1.address}`)
+    // const L2Mock1 = await demo721.connect(destWallet).deploy("L2 721Nft2", "L2 721Nft2", "ipfs://erc721.io/L1/to/L2/");
+    // await L2Mock1.deployTransaction.wait();
+    // console.log(`\n  L2 721Nft2 deployed on L2 @ ${L2Mock1.address}`)
 
-    const L2Mock2 = await demo721.connect(destWallet).deploy("L2 721Nft3", "L2 721Nft3", "ipfs://erc721.io/L1/to/L2/");
-    await L2Mock2.deployTransaction.wait();
-    console.log(`\n  L2 721Nft3 deployed on L2 @ ${L2Mock2.address}`)
+    // const L2Mock2 = await demo721.connect(destWallet).deploy("L2 721Nft3", "L2 721Nft3", "ipfs://erc721.io/L1/to/L2/");
+    // await L2Mock2.deployTransaction.wait();
+    // console.log(`\n  L2 721Nft3 deployed on L2 @ ${L2Mock2.address}`)
     
     // mint token
     console.log("Mint nft Token")
     for(let index = 0; index < presetTokenIds.length; index++) {
         await L1Mock.mint(originWallet.address, presetTokenIds[index]);
-        await L1Mock1.mint(originWallet.address, presetTokenIds[index]);
-        await L1Mock2.mint(originWallet.address, presetTokenIds[index]);
+        // await L1Mock1.mint(originWallet.address, presetTokenIds[index]);
+        // await L1Mock2.mint(originWallet.address, presetTokenIds[index]);
         await L2Mock.mint(originWallet.address, presetTokenIds[index]);
-        await L2Mock1.mint(originWallet.address, presetTokenIds[index]);
-        await L2Mock2.mint(originWallet.address, presetTokenIds[index]);
+        // await L2Mock1.mint(originWallet.address, presetTokenIds[index]);
+        // await L2Mock2.mint(originWallet.address, presetTokenIds[index]);
     }
     let balance = await L1Mock.balanceOf(originWallet.address)
     console.log(`\n  ${L1Mock.address} mint tokens{ ${balance} } to ${originWallet.address}`)
-    console.log(`\n  ${L1Mock1.address} mint tokens{ ${balance} } to ${originWallet.address}`)
-    console.log(`\n  ${L1Mock2.address} mint tokens{ ${balance} } to ${originWallet.address}`)
+    // console.log(`\n  ${L1Mock1.address} mint tokens{ ${balance} } to ${originWallet.address}`)
+    // console.log(`\n  ${L1Mock2.address} mint tokens{ ${balance} } to ${originWallet.address}`)
     console.log(`\n  ${L2Mock.address} mint tokens{ ${balance} } to ${originWallet.address}`)
-    console.log(`\n  ${L2Mock1.address} mint tokens{ ${balance} } to ${originWallet.address}`)
-    console.log(`\n  ${L2Mock2.address} mint tokens{ ${balance} } to ${originWallet.address}`)
+    // console.log(`\n  ${L2Mock1.address} mint tokens{ ${balance} } to ${originWallet.address}`)
+    // console.log(`\n  ${L2Mock2.address} mint tokens{ ${balance} } to ${originWallet.address}`)
 
     // return 
     accounts[L1Mock.address] = "L1 ERC721 Contract";
@@ -608,7 +608,7 @@ async function init(config) {
     let tenETH = ethers.utils.parseEther("10")
 
     let presetTokenIds = [1, 2, 3, 4, 5];
-
+    
     let crossDomainId = presetTokenIds[2];
     
     // call
@@ -639,22 +639,70 @@ async function init(config) {
     await L2_TX1.wait()
     console.log(`\n  set done.`)
     
+    console.log("set bridget")
     await bridgeFactoryL1.setbridge(bridges.L1.bridge.address)
     await bridgeFactoryL2.setbridge(bridges.L2.bridge.address)
+    console.log("set bridget done")
     // param second is clone contract
-    
-    await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
+    console.log("deploy nft")
+    let nft721s = await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
 
-    await mockDeployERC1155(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
+    // let nft1155s = await mockDeployERC1155(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
     // bridgeFactoryL1.setNft(wallets.L1.ali.address,wallets.L1.ali.address,ChainIDs.L2,config.gas.L2)
+    console.log("deploy done")
+
+    console.log("create pair")
+    await bridgeFactoryL2.create721Pair(nft721s.L1.address,"nft","nft","nft")
+    let wrapNft = await bridgeFactoryL2.getPair(nft721s.L1.address)
+    console.log("setNft")
+    await bridgeFactoryL1.setNft(nft721s.L1.address,wrapNft,ChainIDs.L1,config.gas.L2)
     
+    let log = {
+        L1: [
+            await bridges.L1.bridge.clone(nft721s.L1.address),
+            await bridges.L1.bridge.isOrigin(nft721s.L1.address),
+        ],
+        L2: [
+            await bridges.L2.bridge.clone(nft721s.L2.address),
+            await bridges.L2.bridge.isOrigin(nft721s.L2.address),
+        ]
+    }
+
+    console.log("\n  clone and origin:", log);
+    console.log("approve")
+    await nft721s.L1.approve(bridges.L1.bridge.address,1)
+    let tokenIDOwnerL1 = await nft721s.L1.ownerOf(1);
+    console.log(`\n  tokenID {${1}} owner is {${tokenIDOwnerL1}} on L1`);
+    
+    console.log("L1=>L2")
+
+    await bridges.L1.bridge.connect(wallets.L1.ali).depositTo(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2)
+    console.log(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2)
+    // await bridges.L1.bridge.depositTo(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2,{value: 3200000000000000})
+    console.log("end")
+   
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    tokenIDOwnerL1 = await nft721s.L1.ownerOf(1);
+    console.log(`\n  tokenID {${1}} owner is {${tokenIDOwnerL1}} on L1`);
+    
+    let wrapNftL2 =  demo721.connect(wallets.L2.ali).attach(wrapNft)
+    let tokenIDOwnerL2 = await wrapNftL2.ownerOf(1);
+    console.log(`\n  tokenID {${1}} owner is {${tokenIDOwnerL2}} on L2`);
+    
+    console.log("L2=>L1")
+    await bridges.L2.bridge.connect(wallets.L1.ali).depositTo(wrapNft,wallets.L2.ali.address,1,0,config.gas.L1,{value: 3200000000000000})
+    console.log("end")
+    await new Promise((resolve) => setTimeout(resolve, 20000));
+    let tokenIDOwnerL11 = await nft721s.L1.ownerOf(1);
+    console.log(`\n  tokenID {${1}} owner is {${tokenIDOwnerL11}} on L1`);
+    
+    // let wrapNftL2 =  demo721.connect(wallets.L2.ali).attach(wrapNft)
+    let tokenIDOwnerL21 = await wrapNftL2.ownerOf(1);
+    console.log(`\n  tokenID {${1}} owner is {${tokenIDOwnerL21}} on L2`);
 }
 
 async function main() {
     try{
-        // await init(config, config.nftStandard.ERC721);
-        
-        // await init(config, config.nftStandard.ERC1155);
         await init(config)
     }catch(e){
         console.error("dev-debug:", e, "run error!");
