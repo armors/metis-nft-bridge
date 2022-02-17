@@ -26,6 +26,9 @@ const l1Lib_AddressManager = new ethers.ContractFactory(l1Lib_AddressManagerArti
 const NFTDepositArtifact = require(`../artifacts/contracts/NFTDeposit.sol/NFTDeposit.json`)
 const NFTDeposit = new ethers.ContractFactory(NFTDepositArtifact.abi, NFTDepositArtifact.bytecode)
 
+const OVM_GasPriceOracleArtifact = require(`../node_modules/@metis.io/contracts/artifacts/contracts/L2/predeploys/OVM_GasPriceOracle.sol/OVM_GasPriceOracle.json`)
+const OVM_GasPriceOracle = new ethers.ContractFactory(OVM_GasPriceOracleArtifact.abi, OVM_GasPriceOracleArtifact.bytecode)
+
 
 const config = {
     rpc: {
@@ -320,16 +323,22 @@ async function getMessenger(l1RpcProvider, l2RpcProvider) {
     return messenger;
 }
 
-async function setCrossDomain(L1Messenger, L1Owner) {
+async function setCrossDomain(L1Messenger, L1Owner, L2Owner) {
     let L1LibAddressManager = await L1Messenger.libAddressManager();
     const L1LibAddressManagerObj = l1Lib_AddressManager.connect(L1Owner).attach(L1LibAddressManager)
     let METIS_MANAGER = await L1LibAddressManagerObj.getAddress("METIS_MANAGER");
     console.log("\n  METIS_MANAGER role: ", accounts[METIS_MANAGER]);
     let MVM_DiscountOracle = await L1LibAddressManagerObj.getAddress("MVM_DiscountOracle");
     const MVM_DiscountOracleObj = l1MVM_DiscountOracle.connect(L1Owner).attach(MVM_DiscountOracle)
-    L1_init = await MVM_DiscountOracleObj.setAllowAllXDomainSenders(true);
-    L1_init.wait();
+    L1_init_tx = await MVM_DiscountOracleObj.setAllowAllXDomainSenders(true);
+    
+    L1_init_tx.wait();
     console.log("\n  L1 METIS_MANAGER role set white list done.")
+
+    let L2OVM_GasPriceOracle = predeploys.OVM_GasPriceOracle;
+    const OVM_GasPriceOracleObj = OVM_GasPriceOracle.connect(L2Owner).attach(L2OVM_GasPriceOracle)
+    let minErc20BridgeCost = await OVM_GasPriceOracleObj.minErc20BridgeCost();
+    console.log("\n  L2 OVM_GasPriceOracle minErc20BridgeCost: ", minErc20BridgeCost.toString());
 
     let crossDomain = {
         L1LibAddressManager: L1LibAddressManager
@@ -491,7 +500,7 @@ async function deployBridgeConfig(L1Bridge, L2Bridge, L1Deposit, L2Deposit, L1Mo
   
     console.log(`\n  project config clone nft.`)
     // {gasLimit: 3200000000000000}
-    L1_TX2 = await L1Bridge.connect(L1Factory).configNFT(L1Mock.address, L2Mock.address, L1ChainId, L2Gas);
+    L1_TX2 = await L1Bridge.connect(L1Factory).configNFT(L1Mock.address, L2Mock.address, L1ChainId, L2Gas, {value: 3200000000000000});
     await L1_TX2.wait()
     console.log('\n  waiting peer L1 => L2 configNFT ')
     await new Promise((resolve) => setTimeout(resolve, wait));
@@ -537,7 +546,7 @@ async function DepositL1ToL2(L1Bridge, L1Mock, L2Mock, L1MockWallet, tokenID, de
     }
 
     // function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas)
-    let L1_TX1 = await L1Bridge.connect(L1MockWallet).depositTo(L1Mock.address, destTo.address, tokenID, nftStandard, destGas);
+    let L1_TX1 = await L1Bridge.connect(L1MockWallet).depositTo(L1Mock.address, destTo.address, tokenID, nftStandard, destGas,{value: 3200000000000000});
     await L1_TX1.wait()
     
     console.log('\n  waiting peer L1 => L2 depositTo { L1 ali => L2 bob }')
@@ -611,7 +620,7 @@ async function init(config) {
     
     let gases = await getGas(l1RpcProvider, l2RpcProvider);
     
-    let crossDomain = await setCrossDomain(messengers.L1, wallets.L1.owner);
+    let crossDomain = await setCrossDomain(messengers.L1, wallets.L1.owner, wallets.L2.owner);
 
     const bridgeFactoryL1 = await factory.connect(wallets.L1.owner).deploy();
     await bridgeFactoryL1.deployTransaction.wait();

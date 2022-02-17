@@ -356,17 +356,17 @@ async function init(config, env) {
 
     await bridgeSet(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit);
     
-    let presetTokenIds = [1, 2, 3, 4, 5];
+    // let presetTokenIds = [1, 2, 3, 4, 5];
 
-    mock = await mockDeployERC721(wallets.L1.owner, wallets.L2.owner, presetTokenIds, bridges.L2.bridge);
+    // mock = await mockDeployERC721(wallets.L1.owner, wallets.L2.owner, presetTokenIds, bridges.L2.bridge);
 
     // await NFTConfig(bridges.L1.bridge, bridges.L2.bridge, mock.L1, mock.L2, ChainIDs.L1, config.gas.L2, config.wait.v1, wallets.L1.owner);
 }
 
 async function main() {
     try{
-        // let env = "rinkey";
-        let env = "dev";
+        let env = "rinkey";
+        // let env = "dev";
         let config = configENV[env];
         await init(config, env);
     }catch(e){
@@ -374,4 +374,31 @@ async function main() {
     }
 }
 
-// main();
+main();
+
+
+// owner 0xB3b765AC9DD4A9Bde5B157fDDc492b1F5BB8547f initWallet: 
+//  L1 balances:  3695819976730570105 
+//  L2 balances:  1900168658000000000 
+
+// getChainID: 
+//  chainIDs:  { L1: 4, L2: 588 } 
+
+// getMessenger: 
+//  messenger:  {
+//   L1: '0xfD1b91066D27345023eBE2FE0D4C59d78c46129f',
+//   L2: '0x4200000000000000000000000000000000000007'
+// } 
+
+
+//   bridge deployed on L1 @ 0xcd85317134449F9B2e7854cc8A40EB5CB4E8Ae3f
+
+//   bridge deposit deployed on L1 @ 0x3f57d3A857eC34708CA42644F23b3507F8a44178
+
+//   bridge deployed on L2 @ 0x96A632d42372399b97De055820b46d055389eFA0
+
+//   bridge deposit deployed on L2 @ 0x08CCf46C01acd95A366876F11c6AeE2b24d361E9
+
+//   call set on L1 and L2
+
+//   set done.
