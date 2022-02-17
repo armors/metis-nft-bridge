@@ -77,7 +77,7 @@ contract BridgeFactory is Ownable{
         address destNFT, 
         uint256 originNFTChainId, 
         uint32 destGasLimit) 
-        external {
+        external payable {
         require(bridge != address(0),"Bridge:Bridge address is zero");
         require(localNFT != address(0),"Bridge:localNFT address is zero");
         require(destNFT != address(0),"Bridge:destNFT address is zero");
