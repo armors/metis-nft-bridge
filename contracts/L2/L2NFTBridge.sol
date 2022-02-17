@@ -13,6 +13,7 @@ import { IStandarERC1155 } from "../IStandarERC1155.sol";
 import { CrossDomainEnabled } from "../gateway/CrossDomainEnabled.sol";
 
 import { Lib_PredeployAddresses } from "../gateway/Lib_PredeployAddresses.sol";
+import { iOVM_GasPriceOracle } from "../gateway/iOVM_GasPriceOracle.sol";
 
 import { ICrollDomain } from "../ICrollDomain.sol";
 
@@ -30,9 +31,6 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     
     // L2 nft deposit
     address public localNFTDeposit;
-
-    // L1 min gas
-    uint256 public minL1Gas;
 
     // get current chainid
     function getChainID() internal view returns (uint256) {
@@ -69,14 +67,6 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     constructor(address _owner, address _rollback, address _localMessenger) CrossDomainEnabled(_localMessenger) {
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(ROLLBACK_ROLE, _rollback);
-    }
-
-    /**
-     * Allows the owner to modify the l1 bridge price.
-     * @param _minL1Gas l1 min gas 
-     */
-    function setMinL1Gas(uint256 _minL1Gas) public onlyRole(DEFAULT_ADMIN_ROLE){
-        minL1Gas = _minL1Gas;
     }
 
     /** config 
@@ -125,6 +115,8 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
        require(clone[localNFT] != address(0), "NFT not config.");
 
        require(isDeposit[localNFT][id] == false, "Don't redeposit.");
+
+       uint256 minL1Gas = iOVM_GasPriceOracle(Lib_PredeployAddresses.OVM_GASPRICE_ORACLE).minErc20BridgeCost();
 
        require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
 
