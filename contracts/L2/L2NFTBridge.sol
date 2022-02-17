@@ -112,37 +112,38 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external payable onlyEOA() {
        
-       require(clone[localNFT] != address(0), "NFT not config.");
+        require(clone[localNFT] != address(0), "NFT not config.");
 
-       require(isDeposit[localNFT][id] == false, "Don't redeposit.");
+        require(isDeposit[localNFT][id] == false, "Don't redeposit.");
 
-       uint256 minL1Gas = iOVM_GasPriceOracle(Lib_PredeployAddresses.OVM_GASPRICE_ORACLE).minErc20BridgeCost();
+        uint256 minL1Gas = iOVM_GasPriceOracle(Lib_PredeployAddresses.OVM_GASPRICE_ORACLE).minErc20BridgeCost();
 
-       require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
+        require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
 
-       uint256 amount = 0;
+        uint256 amount = 0;
        
-       if(nftenum.ERC721 == nftStandard) {
+        if(nftenum.ERC721 == nftStandard) {
             IERC721(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id);
-       }
+        }
        
-       if(nftenum.ERC1155 == nftStandard) {
+        if(nftenum.ERC1155 == nftStandard) {
             amount = IERC1155(localNFT).balanceOf(msg.sender, id);
+            require(amount == 1, "Not an NFT token.");
             IERC1155(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id, amount, "");
-       }
+        }
        
-       _depositStatus(localNFT, id, msg.sender, true);
+        _depositStatus(localNFT, id, msg.sender, true);
 
-       address destNFT = clone[localNFT];
+        address destNFT = clone[localNFT];
 
-       _messenger(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
+        _messenger(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
 
-       emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
+        emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
 
     function _depositStatus(address _nft, uint256 _id, address _user, bool _isDeposit) internal {
-       isDeposit[_nft][_id] = _isDeposit;
-       depositUser[_nft][_id] = _user;
+        isDeposit[_nft][_id] = _isDeposit;
+        depositUser[_nft][_id] = _user;
     }
 
     /** deposit messenger

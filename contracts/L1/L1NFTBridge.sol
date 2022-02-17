@@ -180,6 +180,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
        
        if(nftenum.ERC1155 == nftStandard) {
             amount = IERC1155(localNFT).balanceOf(msg.sender, id);
+            require(amount == 1, "Not an NFT token.");
             IERC1155(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id, amount, "");
        }
        
