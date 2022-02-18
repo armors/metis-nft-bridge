@@ -17,6 +17,7 @@ contract NFTDeposit is IERC721Receiver, ERC1155Receiver, AccessControl {
     
     event ERC721ReceivedEvent(address indexed operator, address indexed from, uint256 tokenId, bytes data);
     event ERC1155ReceivedEvent(address indexed operator, address indexed from, uint256 id, uint256 value, bytes data);
+    event ERC1155BatchReceivedEvent(address indexed operator, address indexed from, uint256[] ids, uint256[] values, bytes data);
 
     modifier onlyEOA(address _eoa) {
         require(!Address.isContract(_eoa), "Account not EOA");
@@ -34,6 +35,7 @@ contract NFTDeposit is IERC721Receiver, ERC1155Receiver, AccessControl {
     }
 
     function onERC1155BatchReceived(address operator, address from, uint256[] memory ids, uint256[] memory values, bytes memory data) public virtual override returns (bytes4) {
+        emit ERC1155BatchReceivedEvent(operator, from, ids, values, data);
         return this.onERC1155BatchReceived.selector;
     }
 
