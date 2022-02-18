@@ -71,7 +71,7 @@ const dev = {
     },
     wait:{
         v1: 3000,
-        v2: 15000,
+        v2: 20000,
     },
     nftStandard: {
         ERC721: 0,

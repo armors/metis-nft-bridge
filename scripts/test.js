@@ -601,6 +601,8 @@ async function init(config, nftStandard) {
 
     let bridges = await deployBridge(wallets.L1.owner, wallets.L2.owner, wallets.L1.fac, crossDomain.L1LibAddressManager, messengers.L1.address, messengers.L2.address);
     
+    // eventEmit(bridges);
+
     // param second is clone contract
     let mock;
     if( nftStandard == config.nftStandard.ERC721) {
@@ -625,8 +627,6 @@ async function init(config, nftStandard) {
     // await DepositL2ToL1(bridges.L2.bridge, mock.L1, mock.L2, wallets.L2.ali, crossDomainId, wallets.L1.ali, nftStandard, config.gas.L1, config.wait.v2, config, bridges.L1.deposit, bridges.L2.deposit);
 
     // console.log("\n  accounts:", accounts);
-
-    // eventEmit(bridges);
 }
 
 async function main() {
