@@ -612,10 +612,17 @@ async function init(config, nftStandard) {
     }
 
     await deployBridgeConfig(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit, mock.L1, mock.L2, ChainIDs.L1, config.gas.L2, config.wait.v1, wallets.L1.fac);
+    
     // L1 ali => L2 bob
     await DepositL1ToL2(bridges.L1.bridge, mock.L1, mock.L2, wallets.L1.ali, crossDomainId, wallets.L2.bob, nftStandard, config.gas.L2, config.wait.v1, config, bridges.L1.deposit, bridges.L2.deposit);
+    
     // L2 bob => L1 jno
     await DepositL2ToL1(bridges.L2.bridge, mock.L1, mock.L2, wallets.L2.bob, crossDomainId, wallets.L1.jno, nftStandard, config.gas.L1, config.wait.v2, config, bridges.L1.deposit, bridges.L2.deposit);
+
+    // L1 ali => L2 bob
+    // await DepositL1ToL2(bridges.L1.bridge, mock.L1, mock.L2, wallets.L1.ali, crossDomainId, wallets.L2.ali, nftStandard, config.gas.L2, config.wait.v1, config, bridges.L1.deposit, bridges.L2.deposit);
+    // L2 bob => L1 jno
+    // await DepositL2ToL1(bridges.L2.bridge, mock.L1, mock.L2, wallets.L2.ali, crossDomainId, wallets.L1.ali, nftStandard, config.gas.L1, config.wait.v2, config, bridges.L1.deposit, bridges.L2.deposit);
 
     // console.log("\n  accounts:", accounts);
 
