@@ -651,7 +651,6 @@ async function init(config) {
     let nft721s = await mockDeployERC721(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridgeL2);
 
     // let nft1155s = await mockDeployERC1155(wallets.L1.ali, wallets.L2.ali, presetTokenIds, bridges.L2.bridge);
-    // bridgeFactoryL1.setNft(wallets.L1.ali.address,wallets.L1.ali.address,ChainIDs.L2,config.gas.L2)
     console.log("deploy done")
 
     console.log("create pair")
@@ -659,7 +658,7 @@ async function init(config) {
     let wrapNft = await bridgeFactoryL2.getPair(nft721s.L1.address)
     console.log(wrapNft)
     console.log("setNft")
-    await bridgeFactoryL1.setNft(nft721s.L1.address,wrapNft,ChainIDs.L1,config.gas.L2,{value: 3200000000000000})
+    await bridgeFactoryL1.setNft(nft721s.L1.address,wrapNft,ChainIDs.L1,config.gas.L2, {value: 3200000000000000})
     await new Promise((resolve) => setTimeout(resolve, 3000));
     let log = {
         L1: [
@@ -667,8 +666,8 @@ async function init(config) {
             await bridges.L1.bridge.isOrigin(nft721s.L1.address),
         ],
         L2: [
-            await bridges.L2.bridge.clone(nft721s.L2.address),
-            await bridges.L2.bridge.isOrigin(nft721s.L2.address),
+            await bridges.L2.bridge.clone(wrapNft),
+            await bridges.L2.bridge.isOrigin(wrapNft),
         ]
     }
 
@@ -680,7 +679,7 @@ async function init(config) {
     
     console.log("L1=>L2")
 
-    await bridges.L1.bridge.connect(wallets.L1.ali).depositTo(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2)
+    await bridges.L1.bridge.connect(wallets.L1.ali).depositTo(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2,{value: 3200000000000000})
     console.log(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2)
     // await bridges.L1.bridge.depositTo(nft721s.L1.address,wallets.L2.ali.address,1,0,config.gas.L2,{value: 3200000000000000})
     console.log("end")
@@ -696,8 +695,8 @@ async function init(config) {
 
     console.log("L2=>L1")
     console.log("approve")
-    // await wrapNftL2.approve(bridges.L2.bridge.address,1)
-    await bridges.L2.bridge.connect(wallets.L1.ali).depositTo(wrapNft,wallets.L2.ali.address,1,0,config.gas.L1,{value: 3200000000000000})
+    await wrapNftL2.approve(bridges.L2.bridge.address,1)
+    await bridges.L2.bridge.connect(wallets.L2.ali).depositTo(wrapNft,wallets.L1.ali.address,1,0,config.gas.L1)
     console.log("end")
     
     await new Promise((resolve) => setTimeout(resolve, 20000));
@@ -708,7 +707,7 @@ async function init(config) {
     let tokenIDOwnerL21 = await wrapNftL2.ownerOf(1);
     console.log(`\n  tokenID {${1}} owner is {${tokenIDOwnerL21}} on L2`);
 
-    // eventEmit(bridges);
+    eventEmit(bridges);
 }
 
 async function main() {

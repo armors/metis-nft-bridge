@@ -7,7 +7,7 @@ import './wrap/ERC1155Mock.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
 interface L1NFTBridge{
-    function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGasLimit) external;
+    function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGasLimit) external payable;
 }
 
 contract BridgeFactory is Ownable{
@@ -81,6 +81,6 @@ contract BridgeFactory is Ownable{
         require(bridge != address(0),"Bridge:Bridge address is zero");
         require(localNFT != address(0),"Bridge:localNFT address is zero");
         require(destNFT != address(0),"Bridge:destNFT address is zero");
-        L1NFTBridge(bridge).configNFT(localNFT,destNFT,originNFTChainId,destGasLimit);
+        L1NFTBridge(bridge).configNFT{value:msg.value}(localNFT,destNFT,originNFTChainId,destGasLimit);
     }
 }
