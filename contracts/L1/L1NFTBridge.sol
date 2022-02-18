@@ -20,7 +20,7 @@ import { CommonEvent } from "../CommonEvent.sol";
 import { INFTDeposit } from "../INFTDeposit.sol";
 
 import { iMVM_DiscountOracle } from "../gateway/iMVM_DiscountOracle.sol";
-import { Lib_AddressManager } from "../gateway/Lib_AddressManager.sol";
+import { iLib_AddressManager } from "../gateway/iLib_AddressManager.sol";
 
 contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
 
@@ -77,7 +77,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     /**
      *  @param _owner admin role
      *  @param _nftFactory factory role
-     *  @param _addressManager pre deploy Lib_AddressManager
+     *  @param _addressManager pre deploy iLib_AddressManager
      *  @param _localMessenger pre deploy messenger
      *  @param _rollback rollback role
      */
@@ -87,7 +87,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         _setupRole(ROLLBACK_ROLE, _rollback);
 
         addressManager = _addressManager;
-        oracle = iMVM_DiscountOracle(Lib_AddressManager(addressManager).getAddress('MVM_DiscountOracle'));
+        oracle = iMVM_DiscountOracle(iLib_AddressManager(addressManager).getAddress('MVM_DiscountOracle'));
     }
     
     /** config 
