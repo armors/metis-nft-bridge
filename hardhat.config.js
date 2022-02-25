@@ -19,7 +19,20 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
 //   solidity: "0.8.11",
-  solidity: "0.8.9",
+//   solidity: "0.8.9",
+  solidity:{
+    compilers:[
+      {
+        version: "0.8.9",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      }
+    ]
+  },
   networks: {
     'hardhat': {
         accounts: { mnemonic: 'test test test test test test test test test test test junk' }

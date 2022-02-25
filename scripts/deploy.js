@@ -23,6 +23,8 @@ const l1Lib_AddressManager = new ethers.ContractFactory(l1Lib_AddressManagerArti
 const NFTDepositArtifact = require(`../artifacts/contracts/NFTDeposit.sol/NFTDeposit.json`)
 const NFTDeposit = new ethers.ContractFactory(NFTDepositArtifact.abi, NFTDepositArtifact.bytecode)
 
+const factoryArtifact = require(`../artifacts/contracts/BridgeFactory.sol/BridgeFactory.json`)
+const factory = new ethers.ContractFactory(factoryArtifact.abi, factoryArtifact.bytecode)
 
 const rinkey = {
     rpc: {
@@ -329,6 +331,31 @@ async function NFTConfig(L1Bridge, L2Bridge, L1Mock, L2Mock, L1ChainId, L2Gas, w
     console.log("\n  clone and origin:", log);
 }
 
+async function factoryDeploy(L1BridgeOwner, L2BridgeOwner, bridgeL1, bridgeL2) {
+    const bridgeFactoryL1 = await factory.connect(L1BridgeOwner).deploy();
+    await bridgeFactoryL1.deployTransaction.wait();
+    console.log(`\n  bridgeFactoryL1 deployed on L1 @ ${bridgeFactoryL1.address}`)
+
+    const bridgeFactoryL2 = await factory.connect(L2BridgeOwner).deploy();
+    await bridgeFactoryL2.deployTransaction.wait();
+    console.log(`\n  bridgeFactoryL2 deployed on L2 @ ${bridgeFactoryL2.address}`)
+
+    console.log("\n  set bridget")
+    await bridgeFactoryL1.setbridge(bridgeL1.address)
+    await bridgeFactoryL2.setbridge(bridgeL2.address)
+    console.log("\n  set bridget done")
+
+
+    return {
+        L1: {
+            factory : bridgeFactoryL1
+        },
+        L2 : {
+            factory : bridgeFactoryL2
+        }
+    }
+}
+
 async function init(config, env) {
 
     // Set up our RPC provider connections.
@@ -356,11 +383,48 @@ async function init(config, env) {
 
     await bridgeSet(bridges.L1.bridge, bridges.L2.bridge, bridges.L1.deposit, bridges.L2.deposit);
     
-    // let presetTokenIds = [1, 2, 3, 4, 5];
+    let factoryOBJ = await factoryDeploy(wallets.L1.owner, wallets.L2.owner, bridges.L1.bridge, bridges.L2.bridge);
 
-    // mock = await mockDeployERC721(wallets.L1.owner, wallets.L2.owner, presetTokenIds, bridges.L2.bridge);
+    let NFT_FACTORY_ROLE = await bridges.L1.bridge.NFT_FACTORY_ROLE();
 
-    // await NFTConfig(bridges.L1.bridge, bridges.L2.bridge, mock.L1, mock.L2, ChainIDs.L1, config.gas.L2, config.wait.v1, wallets.L1.owner);
+    await bridges.L1.bridge.grantRole(NFT_FACTORY_ROLE, factoryOBJ.L1.factory.address);
+
+    let isHasRole = await bridges.L1.bridge.hasRole(NFT_FACTORY_ROLE, factoryOBJ.L1.factory.address);
+
+    console.log("\n  NFT_FACTORY_ROLE - isHasRole", NFT_FACTORY_ROLE, isHasRole, factoryOBJ.L1.factory.address);
+
+}
+
+async function getContract(contract, contractAddress, wallet){
+     return contract.connect(wallet).attach(contractAddress)
+}
+
+async function checks(){
+    let env = "rinkey";
+    // let env = "dev";
+    let config = configENV[env];
+
+    // Set up our RPC provider connections.
+    let l1RpcProvider;
+    if(env == 'dev'){
+        l1RpcProvider = new ethers.providers.JsonRpcProvider(config.rpc.L1)
+    }else{
+        l1RpcProvider = new ethers.providers.InfuraProvider(config.rpc.L1.name, {
+            projectId: config.rpc.L1.id,
+            projectSecret: config.rpc.L1.key
+        })
+    }
+    const l2RpcProvider = new ethers.providers.JsonRpcProvider(config.rpc.L2)
+    
+    let wallets = await initWallet(config, l1RpcProvider, l2RpcProvider);
+
+    L1Bridge = await getContract(L1NFTBridge, "0x1CA87dADe86A36611A62dA2208AcA99AEea7D2C6", wallets.L1.owner);
+
+    let NFT_FACTORY_ROLE = await L1Bridge.NFT_FACTORY_ROLE();
+    
+    let isHasRole = await L1Bridge.hasRole(NFT_FACTORY_ROLE, "0xE0DA160F88c70240FB8fc53796cd5ff38d054550");
+
+    console.log("\n  NFT_FACTORY_ROLE - isHasRole", NFT_FACTORY_ROLE, isHasRole, "0xE0DA160F88c70240FB8fc53796cd5ff38d054550");
 }
 
 async function main() {
@@ -374,12 +438,13 @@ async function main() {
     }
 }
 
-main();
+//main();
+checks();
 
-
+// node scripts/deploy.js
 // owner 0xB3b765AC9DD4A9Bde5B157fDDc492b1F5BB8547f initWallet: 
-//  L1 balances:  3695819976730570105 
-//  L2 balances:  1900168658000000000 
+//  L1 balances:  9640676955645098733 
+//  L2 balances:  9744508260000000000 
 
 // getChainID: 
 //  chainIDs:  { L1: 4, L2: 588 } 
@@ -391,14 +456,22 @@ main();
 // } 
 
 
-//   bridge deployed on L1 @ 0xcd85317134449F9B2e7854cc8A40EB5CB4E8Ae3f
+//   bridge deployed on L1 @ 0x1CA87dADe86A36611A62dA2208AcA99AEea7D2C6
 
-//   bridge deposit deployed on L1 @ 0x3f57d3A857eC34708CA42644F23b3507F8a44178
+//   bridge deposit deployed on L1 @ 0x34a9e9689d83623d86Cbfdccf2a508F90458Be4F
 
-//   bridge deployed on L2 @ 0x96A632d42372399b97De055820b46d055389eFA0
+//   bridge deployed on L2 @ 0x9338CbE0BFa4E9e5eF5194fa820540761bEd5F3f
 
-//   bridge deposit deployed on L2 @ 0x08CCf46C01acd95A366876F11c6AeE2b24d361E9
+//   bridge deposit deployed on L2 @ 0xC9E6DF4A1758257F6ef4410d019baBf581Fe41ad
 
 //   call set on L1 and L2
 
 //   set done.
+
+//   bridgeFactoryL1 deployed on L1 @ 0xE0DA160F88c70240FB8fc53796cd5ff38d054550
+
+//   bridgeFactoryL2 deployed on L2 @ 0x828446A86b22E1a568C5C2328c2685EA46b80Af9
+
+//   set bridget
+
+//   set bridget done
