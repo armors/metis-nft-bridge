@@ -303,6 +303,8 @@ async function bridgeSet(L1Bridge, L2Bridge, L1Deposit, L2Deposit){
     console.log(`\n  call set on L1 and L2`)
     L1_TX1 = await L1Bridge.set(L1Deposit.address,L2Bridge.address);
     await L1_TX1.wait()
+    L1_TX2 = await L1Bridge.setL2ChainID(588);
+    await L1_TX2.wait()
     L2_TX1 = await L2Bridge.set(L2Deposit.address, L1Bridge.address);
     await L2_TX1.wait()
     console.log(`\n  set done.`) 
