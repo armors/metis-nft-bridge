@@ -42,8 +42,10 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     iMVM_DiscountOracle public oracle;
 
     // L2 chainid
-    uint256 constant public DEST_CHAINID = 1088;
-    
+    uint256 constant public DEST_MAIN_CHAINID = 1088;
+
+    uint256 constant public DEST_TEST_CHAINID = 588;
+
     // get current chainid
     function getChainID() internal view returns (uint256) {
         uint256 id;
@@ -57,6 +59,14 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     enum nftenum {
         ERC721,
         ERC1155
+    }
+
+    function getL2ChainID() public view returns (uint256) {
+        uint256 localChainId = getChainID();
+        if(localChainId == 1) {
+            return DEST_MAIN_CHAINID;
+        }
+        return DEST_TEST_CHAINID;
     }
 
     // L1 nft => L2 nft
@@ -115,8 +125,9 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGasLimit) external payable onlyRole(NFT_FACTORY_ROLE) {
 
         uint256 localChainId = getChainID();
-    
-        require((originNFTChainId == DEST_CHAINID || originNFTChainId == localChainId), "ChainId not supported");
+        uint256 destChainId = getL2ChainID();
+
+        require((originNFTChainId == destChainId || originNFTChainId == localChainId), "ChainId not supported");
 
         require(clone[localNFT] == address(0), "NFT already configured.");
 
@@ -141,7 +152,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         );
         
         sendCrossDomainMessageViaChainId(
-            DEST_CHAINID,
+            destChainId,
             destNFTBridge,
             destGasLimit,
             message,
@@ -187,8 +198,10 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         _depositStatus(localNFT, id, msg.sender, true);
     
         address destNFT = clone[localNFT];
+    
+        uint256 destChainId = getL2ChainID();
 
-        _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
+        _messenger(destChainId, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
 
         emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
