@@ -580,7 +580,7 @@ async function rollback(config, bridge, role, nftStandard, nft, ids) {
     await bridge.connect(role).rollback(nftStandard, nft.address , ids);
     
     bridge.on("ROLLBACK", (a,b,c,d,e,f) => {
-        console.log("\n  L1 ROLLBACK:",a,b,c,d,e,f);
+        console.log("\n  L1 ROLLBACK:",accounts[a], accounts[b], accounts[c], d.toString(), e.toString(), f.toString());
     });
 }
 
