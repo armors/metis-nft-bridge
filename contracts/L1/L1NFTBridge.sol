@@ -310,18 +310,24 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
             
             uint256 id = ids[index];
 
+            address _depositUser = depositUser[_localNFT][id];
+
             require(isDeposit[_localNFT][id], "Not Deposited");
             
-            require(depositUser[_localNFT][id] != address(0), "user can not be zero address.");
+            require(_depositUser != address(0), "user can not be zero address.");
             
+            uint256 amount = 0;
+
             if(nftenum.ERC721 == nftStandard) {
-                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, depositUser[_localNFT][id], id);
+                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _depositUser, id);
             }else{
-                uint256 amount = IERC1155(_localNFT).balanceOf(msg.sender, id);
-                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, depositUser[_localNFT][id], id, amount);
+                amount = 1;
+                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, _depositUser, id, amount);
             }
     
             _depositStatus(_localNFT, id, address(0), false);
+
+            emit ROLLBACK(_localNFT, localNFTDeposit, _depositUser, id, amount, uint8(nftStandard));
         }
     }
 }

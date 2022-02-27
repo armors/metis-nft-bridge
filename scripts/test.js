@@ -575,6 +575,9 @@ async function eventEmit(bridges){
     });
 }
 
+async function rollback(bridgeL1, bridgeL2, L1Wallet, L2Wallet) {
+    
+}
 
 async function init(config, nftStandard) {
 
