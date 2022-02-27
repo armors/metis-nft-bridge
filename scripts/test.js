@@ -575,8 +575,13 @@ async function eventEmit(bridges){
     });
 }
 
-async function rollback(bridgeL1, bridgeL2, L1Wallet, L2Wallet) {
+async function rollback(config, bridge, role, nftStandard, nft, ids) {
     
+    await bridge.connect(role).rollback(nftStandard, nft.address , ids);
+    
+    bridge.on("ROLLBACK", (a,b,c,d,e,f) => {
+        console.log("\n  L1 ROLLBACK:",a,b,c,d,e,f);
+    });
 }
 
 async function init(config, nftStandard) {
@@ -631,6 +636,8 @@ async function init(config, nftStandard) {
     // await DepositL2ToL1(bridges.L2.bridge, mock.L1, mock.L2, wallets.L2.ali, crossDomainId, wallets.L1.ali, nftStandard, config.gas.L1, config.wait.v2, config, bridges.L1.deposit, bridges.L2.deposit);
 
     // console.log("\n  accounts:", accounts);
+
+    rollback(config, bridges.L2.bridge, wallets.L2.owner, nftStandard, mock.L2, [crossDomainId]);
 
 }
 
