@@ -420,13 +420,13 @@ async function checks(){
     
     let wallets = await initWallet(config, l1RpcProvider, l2RpcProvider);
 
-    L1Bridge = await getContract(L1NFTBridge, "0x1CA87dADe86A36611A62dA2208AcA99AEea7D2C6", wallets.L1.owner);
+    L1Bridge = await getContract(L1NFTBridge, "0x5126F650ca04bc6cB0C47ea2654e997ae5670120", wallets.L1.owner);
 
     let NFT_FACTORY_ROLE = await L1Bridge.NFT_FACTORY_ROLE();
     
-    let isHasRole = await L1Bridge.hasRole(NFT_FACTORY_ROLE, "0xE0DA160F88c70240FB8fc53796cd5ff38d054550");
+    let isHasRole = await L1Bridge.hasRole(NFT_FACTORY_ROLE, "0x4076654b188345A61Ad93143F7E64c4427B4531f");
 
-    console.log("\n  NFT_FACTORY_ROLE - isHasRole", NFT_FACTORY_ROLE, isHasRole, "0xE0DA160F88c70240FB8fc53796cd5ff38d054550");
+    console.log("\n  NFT_FACTORY_ROLE - isHasRole", NFT_FACTORY_ROLE, isHasRole, "0x4076654b188345A61Ad93143F7E64c4427B4531f");
 }
 
 async function main() {
@@ -440,40 +440,42 @@ async function main() {
     }
 }
 
-//main();
+// main();
 checks();
 
-// node scripts/deploy.js
-// owner 0xB3b765AC9DD4A9Bde5B157fDDc492b1F5BB8547f initWallet: 
-//  L1 balances:  9640676955645098733 
-//  L2 balances:  9744508260000000000 
+// -> % node scripts/deploy.js
+// owner 0xB3b765AC9DD4A9Bde5B157fDDc492b1F5BB8547f initWallet:
+//  L1 balances:  9620888810549196250
+//  L2 balances:  9687218949000000000
 
-// getChainID: 
-//  chainIDs:  { L1: 4, L2: 588 } 
+// getChainID:
+//  chainIDs:  { L1: 4, L2: 588 }
 
-// getMessenger: 
+// getMessenger:
 //  messenger:  {
 //   L1: '0xfD1b91066D27345023eBE2FE0D4C59d78c46129f',
 //   L2: '0x4200000000000000000000000000000000000007'
-// } 
+// }
 
 
-//   bridge deployed on L1 @ 0x1CA87dADe86A36611A62dA2208AcA99AEea7D2C6
+//   bridge deployed on L1 @ 0x5126F650ca04bc6cB0C47ea2654e997ae5670120
 
-//   bridge deposit deployed on L1 @ 0x34a9e9689d83623d86Cbfdccf2a508F90458Be4F
+//   bridge deposit deployed on L1 @ 0x77b92F4545DcC9394c68bC33907F6a3f202402C2
 
-//   bridge deployed on L2 @ 0x9338CbE0BFa4E9e5eF5194fa820540761bEd5F3f
+//   bridge deployed on L2 @ 0x831844F04c26241a62eCb074Cc27075bA1686DE9
 
-//   bridge deposit deployed on L2 @ 0xC9E6DF4A1758257F6ef4410d019baBf581Fe41ad
+//   bridge deposit deployed on L2 @ 0xe14651CFaad9d1C58be3b12b22031Ed933bdBcF3
 
 //   call set on L1 and L2
 
 //   set done.
 
-//   bridgeFactoryL1 deployed on L1 @ 0xE0DA160F88c70240FB8fc53796cd5ff38d054550
+//   bridgeFactoryL1 deployed on L1 @ 0x4076654b188345A61Ad93143F7E64c4427B4531f
 
-//   bridgeFactoryL2 deployed on L2 @ 0x828446A86b22E1a568C5C2328c2685EA46b80Af9
+//   bridgeFactoryL2 deployed on L2 @ 0x631c6A5f50666f68F4C1A1E8e4c868b04935dD87
 
 //   set bridget
 
 //   set bridget done
+
+//   NFT_FACTORY_ROLE - isHasRole 0x1b7da5516641e905bc4dbd58b8ca9c7bcb4ffdf55f79c2b6444df9ca56d37be2 false 0x4076654b188345A61Ad93143F7E64c4427B4531f
