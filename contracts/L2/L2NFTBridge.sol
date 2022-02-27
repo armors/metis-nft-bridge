@@ -258,7 +258,8 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
             
             require(_depositUser != address(0), "user can not be zero address.");
             
-            uint amount = 0;
+            uint256 amount = 0;
+            
             if(nftenum.ERC721 == nftStandard) {
                 INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _depositUser, id);
             }else{
