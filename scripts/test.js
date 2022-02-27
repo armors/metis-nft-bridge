@@ -575,6 +575,7 @@ async function eventEmit(bridges){
     });
 }
 
+
 async function init(config, nftStandard) {
 
     // Set up our RPC provider connections.
@@ -627,6 +628,7 @@ async function init(config, nftStandard) {
     // await DepositL2ToL1(bridges.L2.bridge, mock.L1, mock.L2, wallets.L2.ali, crossDomainId, wallets.L1.ali, nftStandard, config.gas.L1, config.wait.v2, config, bridges.L1.deposit, bridges.L2.deposit);
 
     // console.log("\n  accounts:", accounts);
+
 }
 
 async function main() {
