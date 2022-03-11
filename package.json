@@ -9,7 +9,8 @@
         "merge-bridge-L1": "sol-merger \"./contracts/L1/L1NFTBridge.sol\" ./build",
         "merge-bridge-L2": "sol-merger \"./contracts/L2/L2NFTBridge.sol\" ./build",
         "merge-deposit": "sol-merger \"./contracts/NFTDeposit.sol\" ./build",
-        "merge": "npm run merge-bridge-L1 && npm run merge-bridge-L2 && npm run merge-deposit"
+        "merge-factory": "sol-merger \"./contracts/BridgeFactory.sol\" ./build",
+        "merge": "npm run merge-bridge-L1 && npm run merge-bridge-L2 && npm run merge-deposit && npm run merge-factory"
     },
     "keywords": [],
     "author": "",

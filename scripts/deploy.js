@@ -440,8 +440,8 @@ async function main() {
     }
 }
 
-// main();
-checks();
+main();
+// checks();
 
 // -> % node scripts/deploy.js
 // owner 0xB3b765AC9DD4A9Bde5B157fDDc492b1F5BB8547f initWallet:
