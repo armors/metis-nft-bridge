@@ -2,6 +2,14 @@
 
 TIP: 合约License默认 // SPDX-License-Identifier: MIT 
 
+测试网部署脚本为：
+npm run compile
+node scripts/deploy.js
+
+主网建议手动部署
+
+## 目录结构
+
 ├── BridgeFactory.sol
 ├── CommonEvent.sol
 ├── ICrollDomain.sol
@@ -29,7 +37,9 @@ TIP: 合约License默认 // SPDX-License-Identifier: MIT
     └── ERC721Mock.sol
 
 
-##  L1 部署合约
+## 部署
+
+####  L1 部署合约
 
 L1/L1NFTBridge.sol
 NFTDeposit.sol
@@ -70,7 +80,7 @@ await bridgeFactoryL1.setbridge(
 
 ```
 
-##  L2 部署合约
+####  L2 部署合约
 
 L2/L2NFTBridge.sol
 NFTDeposit.sol
