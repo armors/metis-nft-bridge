@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
 /**
  * @dev Interface of the ERC165 standard, as defined in the
@@ -25,7 +25,7 @@ interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721.sol)
 /**
  * @dev Required interface of an ERC721 compliant contract.
@@ -164,7 +164,7 @@ interface IERC721 is IERC165 {
     ) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/IERC1155.sol)
 /**
  * @dev Required interface of an ERC1155 compliant contract, as defined in the
@@ -285,7 +285,7 @@ interface IERC1155 is IERC165 {
     ) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721Receiver.sol)
 /**
  * @title ERC721 token receiver interface
@@ -310,7 +310,7 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/IERC1155Receiver.sol)
 /**
  * @dev _Available since v3.1._
@@ -359,7 +359,7 @@ interface IERC1155Receiver is IERC165 {
     ) external returns (bytes4);
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 /**
  * @dev Implementation of the {IERC165} interface.
@@ -384,7 +384,7 @@ abstract contract ERC165 is IERC165 {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/utils/ERC1155Receiver.sol)
 /**
  * @dev _Available since v3.1._
@@ -608,7 +608,7 @@ library Address {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
 /**
  * @dev External interface of AccessControl declared to support ERC165 detection.
@@ -694,7 +694,7 @@ interface IAccessControl {
     function renounceRole(bytes32 role, address account) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 /**
  * @dev Provides information about the current execution context, including the
@@ -716,7 +716,7 @@ abstract contract Context {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 /**
  * @dev String operations.
@@ -781,7 +781,7 @@ library Strings {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (access/AccessControl.sol)
 /**
  * @dev Contract module that allows children to implement role-based access
@@ -997,13 +997,14 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
     }
 }
 
-// 
+
 contract NFTDeposit is IERC721Receiver, ERC1155Receiver, AccessControl {
     
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
     
     event ERC721ReceivedEvent(address indexed operator, address indexed from, uint256 tokenId, bytes data);
     event ERC1155ReceivedEvent(address indexed operator, address indexed from, uint256 id, uint256 value, bytes data);
+    event ERC1155BatchReceivedEvent(address indexed operator, address indexed from, uint256[] ids, uint256[] values, bytes data);
 
     modifier onlyEOA(address _eoa) {
         require(!Address.isContract(_eoa), "Account not EOA");
@@ -1021,6 +1022,7 @@ contract NFTDeposit is IERC721Receiver, ERC1155Receiver, AccessControl {
     }
 
     function onERC1155BatchReceived(address operator, address from, uint256[] memory ids, uint256[] memory values, bytes memory data) public virtual override returns (bytes4) {
+        emit ERC1155BatchReceivedEvent(operator, from, ids, values, data);
         return this.onERC1155BatchReceived.selector;
     }
 

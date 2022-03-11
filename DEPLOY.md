@@ -1,5 +1,7 @@
 # 部署说明
 
+TIP: 合约License默认 // SPDX-License-Identifier: MIT 
+
 ├── BridgeFactory.sol
 ├── CommonEvent.sol
 ├── ICrollDomain.sol

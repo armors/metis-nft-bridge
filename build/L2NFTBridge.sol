@@ -212,7 +212,7 @@ library Address {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
 /**
  * @dev External interface of AccessControl declared to support ERC165 detection.
@@ -298,7 +298,7 @@ interface IAccessControl {
     function renounceRole(bytes32 role, address account) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 /**
  * @dev Provides information about the current execution context, including the
@@ -320,7 +320,7 @@ abstract contract Context {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 /**
  * @dev String operations.
@@ -385,7 +385,7 @@ library Strings {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
 /**
  * @dev Interface of the ERC165 standard, as defined in the
@@ -408,7 +408,7 @@ interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 /**
  * @dev Implementation of the {IERC165} interface.
@@ -433,7 +433,7 @@ abstract contract ERC165 is IERC165 {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (access/AccessControl.sol)
 /**
  * @dev Contract module that allows children to implement role-based access
@@ -649,7 +649,7 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721.sol)
 /**
  * @dev Required interface of an ERC721 compliant contract.
@@ -788,7 +788,7 @@ interface IERC721 is IERC165 {
     ) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/IERC1155.sol)
 /**
  * @dev Required interface of an ERC1155 compliant contract, as defined in the
@@ -1084,6 +1084,10 @@ library Lib_PredeployAddresses {
     
 }
 
+interface iOVM_GasPriceOracle {
+    function minErc20BridgeCost() view external returns(uint256);
+}
+
 interface ICrollDomain {
     function finalizeDeposit(address _nft, address _from, address _to, uint256 _id, uint256 _amount, uint8 nftStandard) external;
 }
@@ -1127,6 +1131,16 @@ interface CommonEvent {
         uint256 _amount,
         uint8 nftStandard
     );
+
+
+    event ROLLBACK(
+        address _nft,
+        address _from,
+        address _to,
+        uint256 _tokenID,
+        uint256 _amount,
+        uint8 nftStandard
+    );
 }
 
 interface INFTDeposit {
@@ -1147,7 +1161,7 @@ interface INFTDeposit {
         external;
 }
 
-// 
+
 contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     
     // rollback
@@ -1158,9 +1172,6 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
     
     // L2 nft deposit
     address public localNFTDeposit;
-
-    // L1 min gas
-    uint256 public minL1Gas;
 
     // get current chainid
     function getChainID() internal view returns (uint256) {
@@ -1199,20 +1210,12 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
         _setupRole(ROLLBACK_ROLE, _rollback);
     }
 
-    /**
-     * Allows the owner to modify the l1 bridge price.
-     * @param _minL1Gas l1 min gas 
-     */
-    function setMinL1Gas(uint256 _minL1Gas) public onlyRole(DEFAULT_ADMIN_ROLE){
-        minL1Gas = _minL1Gas;
-    }
-
     /** config 
      * 
      * @param _localNFTDeposit L2 deposit
      * @param _destNFTBridge L1 bridge
      */
-    function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function set(address _localNFTDeposit, address _destNFTBridge) public onlyRole(DEFAULT_ADMIN_ROLE) {
         
         require(destNFTBridge == address(0), "Already configured.");
 
@@ -1250,35 +1253,38 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
      */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGas) external payable onlyEOA() {
        
-       require(clone[localNFT] != address(0), "NFT not config.");
+        require(clone[localNFT] != address(0), "NFT not config.");
 
-       require(isDeposit[localNFT][id] == false, "Don't redeposit.");
+        require(isDeposit[localNFT][id] == false, "Don't redeposit.");
 
-       require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
+        uint256 minL1Gas = iOVM_GasPriceOracle(Lib_PredeployAddresses.OVM_GASPRICE_ORACLE).minErc20BridgeCost();
 
-       uint256 amount = 0;
+        require (msg.value >= minL1Gas, string(abi.encodePacked("insufficient depositTo fee supplied. need at least ", uint2str(minL1Gas))));
+
+        uint256 amount = 0;
        
-       if(nftenum.ERC721 == nftStandard) {
+        if(nftenum.ERC721 == nftStandard) {
             IERC721(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id);
-       }
+        }
        
-       if(nftenum.ERC1155 == nftStandard) {
+        if(nftenum.ERC1155 == nftStandard) {
             amount = IERC1155(localNFT).balanceOf(msg.sender, id);
+            require(amount == 1, "Not an NFT token.");
             IERC1155(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id, amount, "");
-       }
+        }
        
-       _depositStatus(localNFT, id, msg.sender, true);
+        _depositStatus(localNFT, id, msg.sender, true);
 
-       address destNFT = clone[localNFT];
+        address destNFT = clone[localNFT];
 
-       _messenger(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
+        _messenger(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGas);
 
-       emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
+        emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
 
     function _depositStatus(address _nft, uint256 _id, address _user, bool _isDeposit) internal {
-       isDeposit[_nft][_id] = _isDeposit;
-       depositUser[_nft][_id] = _user;
+        isDeposit[_nft][_id] = _isDeposit;
+        depositUser[_nft][_id] = _user;
     }
 
     /** deposit messenger
@@ -1387,18 +1393,24 @@ contract L2NFTBridge is AccessControl, CrossDomainEnabled, CommonEvent {
             
             uint256 id = ids[index];
 
+            address _depositUser = depositUser[_localNFT][id];
+
             require(isDeposit[_localNFT][id], "Not Deposited");
             
-            require(depositUser[_localNFT][id] != address(0), "user can not be zero address.");
+            require(_depositUser != address(0), "user can not be zero address.");
+            
+            uint256 amount = 0;
             
             if(nftenum.ERC721 == nftStandard) {
-                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, depositUser[_localNFT][id], id);
+                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _depositUser, id);
             }else{
-                uint256 amount = IERC1155(_localNFT).balanceOf(msg.sender, id);
-                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, depositUser[_localNFT][id], id, amount);
+                amount = 1;
+                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, _depositUser, id, amount);
             }
     
             _depositStatus(_localNFT, id, address(0), false);
+
+            emit ROLLBACK(_localNFT, localNFTDeposit, _depositUser, id, amount, uint8(nftStandard));
         }
     }
 }

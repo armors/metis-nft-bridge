@@ -212,7 +212,7 @@ library Address {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
 /**
  * @dev External interface of AccessControl declared to support ERC165 detection.
@@ -298,7 +298,7 @@ interface IAccessControl {
     function renounceRole(bytes32 role, address account) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 /**
  * @dev Provides information about the current execution context, including the
@@ -320,7 +320,7 @@ abstract contract Context {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 /**
  * @dev String operations.
@@ -385,7 +385,7 @@ library Strings {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)
 /**
  * @dev Interface of the ERC165 standard, as defined in the
@@ -408,7 +408,7 @@ interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 /**
  * @dev Implementation of the {IERC165} interface.
@@ -433,7 +433,7 @@ abstract contract ERC165 is IERC165 {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (access/AccessControl.sol)
 /**
  * @dev Contract module that allows children to implement role-based access
@@ -649,7 +649,7 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
     }
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721.sol)
 /**
  * @dev Required interface of an ERC721 compliant contract.
@@ -788,7 +788,7 @@ interface IERC721 is IERC165 {
     ) external;
 }
 
-// 
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC1155/IERC1155.sol)
 /**
  * @dev Required interface of an ERC1155 compliant contract, as defined in the
@@ -1111,6 +1111,16 @@ interface CommonEvent {
         uint256 _amount,
         uint8 nftStandard
     );
+
+
+    event ROLLBACK(
+        address _nft,
+        address _from,
+        address _to,
+        uint256 _tokenID,
+        uint256 _amount,
+        uint8 nftStandard
+    );
 }
 
 interface INFTDeposit {
@@ -1159,118 +1169,18 @@ interface iMVM_DiscountOracle {
     function processL2SeqGas(address sender, uint256 _chainId) external payable;
 }
 
-abstract contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor() {
-        _transferOwnership(_msgSender());
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        _transferOwnership(address(0));
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address newOwner) internal virtual {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-}
-
-contract Lib_AddressManager is Ownable {
-    /**********
-     * Events *
-     **********/
-
-    event AddressSet(string indexed _name, address _newAddress, address _oldAddress);
-
-    /*************
-     * Variables *
-     *************/
-
-    mapping(bytes32 => address) private addresses;
-
-    /********************
-     * Public Functions *
-     ********************/
-
-    /**
-     * Changes the address associated with a particular name.
-     * @param _name String name to associate an address with.
-     * @param _address Address to associate with the name.
-     */
-    function setAddress(string memory _name, address _address) external onlyOwner {
-        bytes32 nameHash = _getNameHash(_name);
-        address oldAddress = addresses[nameHash];
-        addresses[nameHash] = _address;
-
-        emit AddressSet(_name, _address, oldAddress);
-    }
+interface iLib_AddressManager {
 
     /**
      * Retrieves the address associated with a given name.
      * @param _name Name to retrieve an address for.
      * @return Address associated with the given name.
      */
-    function getAddress(string memory _name) external view returns (address) {
-        return addresses[_getNameHash(_name)];
-    }
+    function getAddress(string memory _name) external view returns (address);
 
-    /**********************
-     * Internal Functions *
-     **********************/
-
-    /**
-     * Computes the hash of a name.
-     * @param _name Name to compute a hash for.
-     * @return Hash of the given name.
-     */
-    function _getNameHash(string memory _name) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_name));
-    }
 }
 
-// 
+
 contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
 
     // L1 configNFT role
@@ -1291,8 +1201,8 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     iMVM_DiscountOracle public oracle;
 
     // L2 chainid
-    uint256 constant public DEST_CHAINID = 1088;
-    
+    uint256 public DEST_CHAINID = 1088;
+
     // get current chainid
     function getChainID() internal view returns (uint256) {
         uint256 id;
@@ -1306,6 +1216,10 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     enum nftenum {
         ERC721,
         ERC1155
+    }
+
+    function setL2ChainID(uint256 chainID) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        DEST_CHAINID = chainID;
     }
 
     // L1 nft => L2 nft
@@ -1326,7 +1240,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
     /**
      *  @param _owner admin role
      *  @param _nftFactory factory role
-     *  @param _addressManager pre deploy Lib_AddressManager
+     *  @param _addressManager pre deploy iLib_AddressManager
      *  @param _localMessenger pre deploy messenger
      *  @param _rollback rollback role
      */
@@ -1336,7 +1250,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         _setupRole(ROLLBACK_ROLE, _rollback);
 
         addressManager = _addressManager;
-        oracle = iMVM_DiscountOracle(Lib_AddressManager(addressManager).getAddress('MVM_DiscountOracle'));
+        oracle = iMVM_DiscountOracle(iLib_AddressManager(addressManager).getAddress('MVM_DiscountOracle'));
     }
     
     /** config 
@@ -1359,12 +1273,12 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param localNFT nft on this chain
      * @param destNFT nft on L2
      * @param originNFTChainId origin NFT ChainId 
-     * @param destGasLimit L2 gas
+     * @param destGasLimit L2 gas limit
      */
     function configNFT(address localNFT, address destNFT, uint256 originNFTChainId, uint32 destGasLimit) external payable onlyRole(NFT_FACTORY_ROLE) {
 
         uint256 localChainId = getChainID();
-    
+
         require((originNFTChainId == DEST_CHAINID || originNFTChainId == localChainId), "ChainId not supported");
 
         require(clone[localNFT] == address(0), "NFT already configured.");
@@ -1373,8 +1287,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
         if (destGasLimit < minGasLimit) {
             destGasLimit = minGasLimit;
         }
-        // TODO
-        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
+        require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
 
         clone[localNFT] = destNFT;
 
@@ -1411,33 +1324,34 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      */
     function depositTo(address localNFT, address destTo, uint256 id,  nftenum nftStandard, uint32 destGasLimit) external onlyEOA() payable {
        
-       require(clone[localNFT] != address(0), "NFT not config.");
+        require(clone[localNFT] != address(0), "NFT not config.");
 
-       require(isDeposit[localNFT][id] == false, "Don't redeposit.");
+        require(isDeposit[localNFT][id] == false, "Don't redeposit.");
 
         uint32 minGasLimit = uint32(oracle.getMinL2Gas());
         if (destGasLimit < minGasLimit) {
             destGasLimit = minGasLimit;
         }
-        // TODO
-        // require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
+        
+        require(destGasLimit * oracle.getDiscount() <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(destGasLimit * oracle.getDiscount()))));
         
         uint256 amount = 0;
        
-       if(nftenum.ERC721 == nftStandard) {
+        if(nftenum.ERC721 == nftStandard) {
             IERC721(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id);
-       }
+        }
        
-       if(nftenum.ERC1155 == nftStandard) {
+        if(nftenum.ERC1155 == nftStandard) {
             amount = IERC1155(localNFT).balanceOf(msg.sender, id);
+            require(amount == 1, "Not an NFT token.");
             IERC1155(localNFT).safeTransferFrom(msg.sender, localNFTDeposit, id, amount, "");
-       }
+        }
        
-      _depositStatus(localNFT, id, msg.sender, true);
+        _depositStatus(localNFT, id, msg.sender, true);
     
-       address destNFT = clone[localNFT];
-
-       _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
+        address destNFT = clone[localNFT];
+    
+        _messenger(DEST_CHAINID, destNFT, msg.sender, destTo, id, amount, uint8(nftStandard), destGasLimit);
 
         emit DEPOSIT_TO(destNFT, msg.sender, destTo, id, amount, uint8(nftStandard));
     }
@@ -1456,7 +1370,7 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
      * @param id nft id  
      * @param amount amount
      * @param nftStandard nft type
-     * @param destGasLimit L2 gas
+     * @param destGasLimit L2 gas limit
      */
     function _messenger(uint256 chainId, address destNFT, address from, address destTo, uint256 id, uint256 amount, uint8 nftStandard, uint32 destGasLimit) internal {
 
@@ -1555,18 +1469,24 @@ contract L1NFTBridge is CrossDomainEnabled, AccessControl, CommonEvent {
             
             uint256 id = ids[index];
 
+            address _depositUser = depositUser[_localNFT][id];
+
             require(isDeposit[_localNFT][id], "Not Deposited");
             
-            require(depositUser[_localNFT][id] != address(0), "user can not be zero address.");
+            require(_depositUser != address(0), "user can not be zero address.");
             
+            uint256 amount = 0;
+
             if(nftenum.ERC721 == nftStandard) {
-                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, depositUser[_localNFT][id], id);
+                INFTDeposit(localNFTDeposit).withdrawERC721(_localNFT, _depositUser, id);
             }else{
-                uint256 amount = IERC1155(_localNFT).balanceOf(msg.sender, id);
-                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, depositUser[_localNFT][id], id, amount);
+                amount = 1;
+                INFTDeposit(localNFTDeposit).withdrawERC1155(_localNFT, _depositUser, id, amount);
             }
     
             _depositStatus(_localNFT, id, address(0), false);
+
+            emit ROLLBACK(_localNFT, localNFTDeposit, _depositUser, id, amount, uint8(nftStandard));
         }
     }
 }
