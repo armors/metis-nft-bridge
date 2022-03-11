@@ -17,6 +17,7 @@
     "devDependencies": {
         "@metis.io/contracts": "^1.2.3",
         "@nomiclabs/hardhat-ethers": "^2.0.4",
+        "@nomiclabs/hardhat-etherscan": "^3.0.3",
         "chai": "^4.3.4",
         "dotenv": "^12.0.4",
         "ethers": "^5.5.3",
