@@ -17,10 +17,6 @@ contract BridgeFactory is Ownable{
 
     event TokenTargetCreated(address indexed tokenSrc, address indexed tokenTag, address opt);
 
-    // constructor(address _bridge) public {
-    //     bridge = _bridge;
-    // }
-
     function setbridge(address _bridge) external onlyOwner{
         require(_bridge != address(0),'Bridge: ZERO_ADDRESS');
         bridge = _bridge;
